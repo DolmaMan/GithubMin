@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GithubMinClient/GithubMinClient.csproj" />
+  <Project Path="GithubMinServer/GithubMinServer.csproj" />
+</Solution>
