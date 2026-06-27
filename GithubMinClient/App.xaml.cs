@@ -1,14 +1,43 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
+using GithubMinClient.Services;
+using GithubMinClient.ViewModels;
 
-namespace GithubMinClient
+namespace GithubMinClient;
+
+public partial class App : System.Windows.Application
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    protected override void OnStartup(StartupEventArgs e)
     {
-    }
+        base.OnStartup(e);
 
+        var tokenStorage = new TokenStorageService();
+        var apiClient = new ApiClient(tokenStorage);
+        var notificationService = new NotificationService();
+        var fileDialogService = new FileDialogService();
+        var localProjectStorageService = new LocalProjectStorageService();
+        var archiveService = new ArchiveService();
+
+        var authService = new AuthService(apiClient);
+        var projectService = new ProjectService(apiClient);
+        var branchService = new BranchService(apiClient);
+        var commitService = new CommitService(apiClient, archiveService);
+        var mergeService = new MergeService(apiClient);
+
+        var viewModel = new MainViewModel(
+            authService,
+            projectService,
+            branchService,
+            commitService,
+            mergeService,
+            tokenStorage,
+            localProjectStorageService,
+            fileDialogService,
+            notificationService);
+
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+        window.Show();
+    }
 }

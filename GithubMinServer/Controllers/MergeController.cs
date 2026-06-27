@@ -38,7 +38,7 @@ public class MergeController(AppDbContext dbContext, VersionControlService versi
 
         if (sourceBranch is null || targetBranch is null)
         {
-            return BadRequest("Both source and target branches must belong to the project.");
+            return BadRequest("Исходная и целевая ветки должны принадлежать этому проекту.");
         }
 
         var author = await _dbContext.Users.FirstAsync(user => user.Id == userId, cancellationToken);

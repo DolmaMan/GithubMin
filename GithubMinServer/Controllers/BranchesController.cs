@@ -52,9 +52,14 @@ public class BranchesController(AppDbContext dbContext) : ControllerBase
         }
 
         var branchName = request.Name.Trim();
+        if (string.IsNullOrWhiteSpace(branchName))
+        {
+            return BadRequest("Введите имя ветки.");
+        }
+
         if (project.Branches.Any(branch => branch.Name.ToLower() == branchName.ToLower()))
         {
-            return Conflict("A branch with the same name already exists.");
+            return Conflict("Ветка с таким именем уже существует.");
         }
 
         Guid? startFromCommitId = request.StartFromCommitId;
@@ -66,7 +71,7 @@ public class BranchesController(AppDbContext dbContext) : ControllerBase
 
             if (!commitExists)
             {
-                return BadRequest("Start commit does not exist in this project.");
+                return BadRequest("Стартовый коммит не найден в этом проекте.");
             }
         }
         else
@@ -111,7 +116,7 @@ public class BranchesController(AppDbContext dbContext) : ControllerBase
         var branch = project.Branches.FirstOrDefault(item => item.Id == request.BranchId);
         if (branch is null)
         {
-            return BadRequest("Branch does not belong to the specified project.");
+            return BadRequest("Ветка не принадлежит указанному проекту.");
         }
 
         project.ActiveBranchId = branch.Id;

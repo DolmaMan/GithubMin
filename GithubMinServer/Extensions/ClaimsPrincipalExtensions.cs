@@ -9,6 +9,6 @@ public static class ClaimsPrincipalExtensions
         var value = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
         return Guid.TryParse(value, out var userId)
             ? userId
-            : throw new InvalidOperationException("Authenticated user id claim is missing.");
+            : throw new InvalidOperationException("Идентификатор авторизованного пользователя отсутствует.");
     }
 }

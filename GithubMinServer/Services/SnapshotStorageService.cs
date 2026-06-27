@@ -18,13 +18,13 @@ public class SnapshotStorageService(IWebHostEnvironment environment, IOptions<St
     {
         if (archive.Length == 0)
         {
-            throw new InvalidOperationException("Archive is empty.");
+            throw new InvalidOperationException("Архив пустой.");
         }
 
         var maxBytes = _options.MaxArchiveSizeMb * 1024L * 1024L;
         if (archive.Length > maxBytes)
         {
-            throw new InvalidOperationException($"Archive exceeds the limit of {_options.MaxArchiveSizeMb} MB.");
+            throw new InvalidOperationException($"Архив превышает лимит {_options.MaxArchiveSizeMb} МБ.");
         }
 
         var relativePath = BuildRelativeSnapshotPath(projectId, commitId);
@@ -69,7 +69,7 @@ public class SnapshotStorageService(IWebHostEnvironment environment, IOptions<St
         var absolutePath = GetAbsolutePath(relativePath);
         if (!File.Exists(absolutePath))
         {
-            throw new FileNotFoundException("Snapshot archive was not found.", absolutePath);
+            throw new FileNotFoundException("Архив снапшота не найден.", absolutePath);
         }
 
         var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
@@ -115,14 +115,32 @@ public class SnapshotStorageService(IWebHostEnvironment environment, IOptions<St
         {
             using var stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
-            _ = archive.Entries.Count;
+            foreach (var entry in archive.Entries)
+            {
+                if (!string.IsNullOrEmpty(entry.Name))
+                {
+                    NormalizeEntryName(entry.FullName);
+                }
+            }
         }
         catch
         {
             File.Delete(absolutePath);
-            throw new InvalidOperationException("Uploaded file is not a valid ZIP archive.");
+            throw new InvalidOperationException("Загруженный файл не является корректным архивом .zip.");
         }
     }
 
-    private static string NormalizeEntryName(string path) => path.Replace('\\', '/');
+    private static string NormalizeEntryName(string path)
+    {
+        var normalized = path.Replace('\\', '/').TrimStart('/');
+        if (string.IsNullOrWhiteSpace(normalized) ||
+            normalized.Contains("../", StringComparison.Ordinal) ||
+            normalized.Equals("..", StringComparison.Ordinal) ||
+            Path.IsPathRooted(path))
+        {
+            throw new InvalidOperationException("Архив содержит небезопасные пути к файлам.");
+        }
+
+        return normalized;
+    }
 }

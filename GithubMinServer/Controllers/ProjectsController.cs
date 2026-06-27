@@ -49,9 +49,9 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
 
     [AllowAnonymous]
     [HttpGet("search")]
-    public async Task<ActionResult<IReadOnlyCollection<ProjectSummaryResponse>>> SearchProjects([FromQuery] string query, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyCollection<ProjectSummaryResponse>>> SearchProjects([FromQuery] string? query, CancellationToken cancellationToken)
     {
-        var normalizedQuery = query.Trim();
+        var normalizedQuery = query?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalizedQuery))
         {
             return Ok(Array.Empty<ProjectSummaryResponse>());
@@ -76,9 +76,15 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
     public async Task<ActionResult<ProjectDetailsResponse>> CreateProject(CreateProjectRequest request, CancellationToken cancellationToken)
     {
         var userId = User.GetRequiredUserId();
+        var projectName = request.Name.Trim();
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            return BadRequest("Введите название проекта.");
+        }
+
         var project = new Project
         {
-            Name = request.Name.Trim(),
+            Name = projectName,
             Description = request.Description.Trim(),
             Visibility = request.Visibility,
             OwnerId = userId,
@@ -135,7 +141,13 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
             return NotFound();
         }
 
-        project.Name = request.Name.Trim();
+        var projectName = request.Name.Trim();
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            return BadRequest("Введите название проекта.");
+        }
+
+        project.Name = projectName;
         project.Description = request.Description.Trim();
         project.Visibility = request.Visibility;
         project.UpdatedAt = DateTimeOffset.UtcNow;

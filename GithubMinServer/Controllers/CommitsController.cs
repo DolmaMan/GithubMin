@@ -66,11 +66,19 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
         {
             return NotFound();
         }
+        if (string.IsNullOrWhiteSpace(request.Message))
+        {
+            return BadRequest("Введите сообщение коммита.");
+        }
+        if (request.Archive is null)
+        {
+            return BadRequest("Архив коммита обязателен.");
+        }
 
         var branch = ResolveBranchForCommit(project, request.BranchId);
         if (branch is null)
         {
-            return BadRequest("Target branch was not found.");
+            return BadRequest("Целевая ветка не найдена.");
         }
 
         var commit = new Commit
@@ -83,11 +91,22 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        commit.SnapshotPath = await _snapshotStorageService.SaveUploadedArchiveAsync(
-            project.Id,
-            commit.Id,
-            request.Archive!,
-            cancellationToken);
+        try
+        {
+            commit.SnapshotPath = await _snapshotStorageService.SaveUploadedArchiveAsync(
+                project.Id,
+                commit.Id,
+                request.Archive,
+                cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+        catch (IOException exception)
+        {
+            return BadRequest($"Не удалось сохранить архив: {exception.Message}");
+        }
 
         _dbContext.Commits.Add(commit);
         branch.HeadCommitId = commit.Id;
@@ -142,11 +161,11 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
         var archivePath = _snapshotStorageService.GetArchiveAbsolutePath(commit.SnapshotPath);
         if (!System.IO.File.Exists(archivePath))
         {
-            return NotFound("Snapshot archive file is missing on the server.");
+            return NotFound("Архив снапшота отсутствует на сервере.");
         }
 
         var stream = new FileStream(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var fileName = $"commit-{commit.Id}.zip";
+        var fileName = $"{ToSafeFileName(commit.Project?.Name ?? "project")}-{commit.Id.ToString()[..8]}.zip";
         return File(stream, "application/zip", fileName, enableRangeProcessing: true);
     }
 
@@ -180,5 +199,12 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
         {
             return null;
         }
+    }
+
+    private static string ToSafeFileName(string value)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var safeName = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return string.IsNullOrWhiteSpace(safeName) ? "project" : safeName.Trim();
     }
 }

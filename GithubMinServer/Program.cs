@@ -5,6 +5,7 @@ using GithubMinServer.Models;
 using GithubMinServer.Options;
 using GithubMinServer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,11 +15,29 @@ var builder = WebApplication.CreateBuilder(args);
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 if (string.IsNullOrWhiteSpace(jwtOptions.Key))
 {
-    throw new InvalidOperationException("JWT signing key is not configured.");
+    throw new InvalidOperationException("Ключ подписи JWT не настроен.");
 }
 
 builder.Services
     .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .Where(message => !string.IsNullOrWhiteSpace(message))
+                .Distinct()
+                .ToArray();
+
+            var message = errors.Length == 0
+                ? "Проверьте правильность заполнения полей."
+                : string.Join(Environment.NewLine, errors);
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { message });
+        };
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -43,6 +62,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(StorageOptions.SectionName));
+builder.Services.Configure<FormOptions>(options =>
+{
+    var storageOptions = builder.Configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>() ?? new StorageOptions();
+    options.MultipartBodyLengthLimit = storageOptions.MaxArchiveSizeMb * 1024L * 1024L;
+});
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=githubmin.db"));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

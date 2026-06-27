@@ -20,17 +20,17 @@ public class VersionControlService(AppDbContext dbContext, SnapshotStorageServic
     {
         if (sourceBranch.Id == targetBranch.Id)
         {
-            throw new InvalidOperationException("Source and target branches must be different.");
+            throw new InvalidOperationException("Исходная и целевая ветки должны отличаться.");
         }
 
         if (sourceBranch.HeadCommitId is null)
         {
-            throw new InvalidOperationException("Source branch has no commits to merge.");
+            throw new InvalidOperationException("В исходной ветке нет коммитов для слияния.");
         }
 
         if (targetBranch.HeadCommitId is null)
         {
-            throw new InvalidOperationException("Target branch has no commits to merge into.");
+            throw new InvalidOperationException("В целевой ветке нет коммитов для слияния.");
         }
 
         var commits = await _dbContext.Commits
@@ -90,7 +90,7 @@ public class VersionControlService(AppDbContext dbContext, SnapshotStorageServic
 
         if (conflicts.Count > 0)
         {
-            return new MergeResponse(false, "Merge has file conflicts.", null, conflicts);
+            return new MergeResponse(false, "При слиянии обнаружены конфликты файлов.", null, conflicts);
         }
 
         var mergeCommit = new Commit
@@ -101,7 +101,7 @@ public class VersionControlService(AppDbContext dbContext, SnapshotStorageServic
             MergeParentCommitId = sourceBranch.HeadCommitId,
             AuthorId = author.Id,
             Message = string.IsNullOrWhiteSpace(message)
-                ? $"Merge {sourceBranch.Name} into {targetBranch.Name}"
+                ? $"Слияние ветки {sourceBranch.Name} в ветку {targetBranch.Name}"
                 : message.Trim(),
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -122,7 +122,7 @@ public class VersionControlService(AppDbContext dbContext, SnapshotStorageServic
         await _dbContext.Entry(mergeCommit).Reference(commit => commit.Author).LoadAsync(cancellationToken);
         await _dbContext.Entry(mergeCommit).Reference(commit => commit.Branch).LoadAsync(cancellationToken);
 
-        return new MergeResponse(true, "Merge completed successfully.", mergeCommit.ToSummaryResponse(), []);
+        return new MergeResponse(true, "Слияние успешно выполнено.", mergeCommit.ToSummaryResponse(), []);
     }
 
     private static Guid? FindCommonAncestor(Guid sourceHeadId, Guid targetHeadId, IReadOnlyDictionary<Guid, Commit> commits)
