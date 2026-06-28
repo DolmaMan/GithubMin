@@ -9,7 +9,6 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(
         AuthService authService,
         ProjectService projectService,
-        UserService userService,
         BranchService branchService,
         CommitService commitService,
         MergeService mergeService,
@@ -20,7 +19,6 @@ public partial class MainViewModel : ObservableObject
     {
         AuthService = authService;
         ProjectService = projectService;
-        UserService = userService;
         BranchService = branchService;
         CommitService = commitService;
         MergeService = mergeService;
@@ -34,7 +32,6 @@ public partial class MainViewModel : ObservableObject
 
     internal AuthService AuthService { get; }
     internal ProjectService ProjectService { get; }
-    internal UserService UserService { get; }
     internal BranchService BranchService { get; }
     internal CommitService CommitService { get; }
     internal MergeService MergeService { get; }

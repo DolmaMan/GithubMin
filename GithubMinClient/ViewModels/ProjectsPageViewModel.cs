@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,246 +14,133 @@ public partial class ProjectsPageViewModel : ObservableObject
     public ProjectsPageViewModel(MainViewModel main)
     {
         this.main = main;
-        newProjectVisibilityOption = VisibilityOptions[0];
     }
 
-    public ObservableCollection<ProjectItemViewModel> MyProjects { get; } = [];
-    public ObservableCollection<ProjectItemViewModel> PublicProjects { get; } = [];
-    public ObservableCollection<UserSearchItemViewModel> Users { get; } = [];
-    public ObservableCollection<ProjectItemViewModel> SelectedUserProjects { get; } = [];
-
-    public IReadOnlyList<ProjectVisibilityOption> VisibilityOptions { get; } =
-    [
-        new(ProjectVisibility.Private, "Приватный"),
-        new(ProjectVisibility.Public, "Публичный")
-    ];
+    [ObservableProperty]
+    private ProjectItemViewModel? selectedProject;
 
     [ObservableProperty]
-    private ProjectItemViewModel? selectedMyProject;
-
-    [ObservableProperty]
-    private ProjectItemViewModel? selectedPublicProject;
-
-    partial void OnSelectedMyProjectChanged(ProjectItemViewModel? value)
-    {
-        if (value is not null)
-        {
-            SelectedPublicProject = null;
-        }
-
-        OnPropertyChanged(nameof(ActiveSelection));
-        OnPropertyChanged(nameof(HasActiveSelection));
-    }
-
-    partial void OnSelectedPublicProjectChanged(ProjectItemViewModel? value)
-    {
-        if (value is not null)
-        {
-            SelectedMyProject = null;
-        }
-
-        OnPropertyChanged(nameof(ActiveSelection));
-        OnPropertyChanged(nameof(HasActiveSelection));
-    }
-
-    public ProjectItemViewModel? ActiveSelection => SelectedMyProject ?? SelectedPublicProject;
-    public bool HasActiveSelection => ActiveSelection is not null;
-
-    [ObservableProperty]
-    private string searchQuery = string.Empty;
-
-    [ObservableProperty]
-    private string userSearchQuery = string.Empty;
-
-    [ObservableProperty]
-    private string newProjectName = string.Empty;
-
-    [ObservableProperty]
-    private string newProjectDescription = string.Empty;
-
-    [ObservableProperty]
-    private ProjectVisibilityOption newProjectVisibilityOption;
-
-    [ObservableProperty]
-    private string newProjectDirectory = string.Empty;
+    private ProjectDetailsPageViewModel? selectedProjectPage;
 
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
     [ObservableProperty]
-    private UserSearchItemViewModel? selectedUser;
-
-    [ObservableProperty]
-    private ProjectItemViewModel? selectedUserProject;
-
-    [ObservableProperty]
     private bool isBusy;
 
-    public async Task LoadAsync()
+    public bool HasSelectedProject => SelectedProjectPage is not null;
+    public string SelectedProjectName => SelectedProjectPage?.Project?.Name ?? "Репозиторий не выбран";
+    public string SelectedProjectOwner => SelectedProjectPage?.OwnerUsername ?? "-";
+    public string SelectedProjectVisibility => SelectedProjectPage?.VisibilityText ?? "-";
+    public string SelectedProjectDescription =>
+        string.IsNullOrWhiteSpace(SelectedProjectPage?.Project?.Description)
+            ? "Репозиторий не выбран"
+            : SelectedProjectPage.Project.Description;
+    public string SelectedProjectLocalStatus => string.IsNullOrWhiteSpace(SelectedProjectPage?.WorkingDirectory)
+        ? "Локальная папка не привязана"
+        : SelectedProjectPage.WorkingDirectory;
+    public string SelectedProjectBranchCount => SelectedProjectPage is null ? "-" : SelectedProjectPage.BranchCount.ToString();
+    public string SelectedProjectCommitCount => SelectedProjectPage is null ? "-" : SelectedProjectPage.CommitCount.ToString();
+    public string SelectedProjectActiveBranch => SelectedProjectPage?.ActiveBranchName ?? "-";
+    public bool CanEditSelectedProject =>
+        SelectedProjectPage is not null &&
+        string.Equals(SelectedProjectPage.OwnerUsername, main.TokenStorageService.Username, StringComparison.OrdinalIgnoreCase);
+
+    partial void OnSelectedProjectChanged(ProjectItemViewModel? value) => NotifySelectionChanged();
+
+    partial void OnSelectedProjectPageChanging(ProjectDetailsPageViewModel? oldValue, ProjectDetailsPageViewModel? newValue)
     {
-        await RunSafelyAsync(async () =>
+        if (oldValue is not null)
         {
-            MyProjects.Clear();
-            PublicProjects.Clear();
-            Users.Clear();
-            SelectedUserProjects.Clear();
-            SelectedUser = null;
-            SelectedUserProject = null;
+            oldValue.PropertyChanged -= SelectedProjectPageOnPropertyChanged;
+        }
+    }
 
-            var myProjects = await main.ProjectService.GetMyProjectsAsync();
-            foreach (var project in myProjects)
-            {
-                MyProjects.Add(ToItem(project));
-            }
+    partial void OnSelectedProjectPageChanged(ProjectDetailsPageViewModel? value)
+    {
+        if (value is not null)
+        {
+            value.PropertyChanged += SelectedProjectPageOnPropertyChanged;
+        }
 
-            var publicProjects = await main.ProjectService.GetPublicProjectsAsync();
-            foreach (var project in publicProjects)
-            {
-                PublicProjects.Add(ToItem(project));
-            }
-        });
+        NotifySelectionChanged();
+    }
+
+    public Task LoadAsync()
+    {
+        if (SelectedProjectPage is not null)
+        {
+            SelectedProjectPage.WorkingDirectory = main.LocalProjectStorageService.GetDirectory(SelectedProjectPage.ProjectId) ?? string.Empty;
+            NotifySelectionChanged();
+        }
+
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private async Task SearchUsersAsync()
+    private Task RefreshAsync() => RunSafelyAsync(async () =>
     {
-        await RunSafelyAsync(async () =>
+        if (SelectedProjectPage is null)
         {
-            Users.Clear();
-            SelectedUserProjects.Clear();
-            SelectedUser = null;
-            SelectedUserProject = null;
+            StatusMessage = "Выберите репозиторий через одну из модалок.";
+            return;
+        }
 
-            if (string.IsNullOrWhiteSpace(UserSearchQuery))
-            {
-                StatusMessage = "Введите имя пользователя для поиска.";
-                return;
-            }
+        await SelectedProjectPage.RefreshAsync();
+        SelectedProject = CreateItem(ToSummary(SelectedProjectPage.Project!));
+        NotifySelectionChanged();
+        StatusMessage = "Данные репозитория обновлены.";
+    });
 
-            var users = await main.UserService.SearchUsersAsync(UserSearchQuery.Trim());
-            foreach (var user in users)
-            {
-                Users.Add(new UserSearchItemViewModel(user));
-            }
-
-            StatusMessage = users.Count == 0 ? "Пользователи не найдены." : string.Empty;
-        });
+    [RelayCommand]
+    private async Task OpenMyRepositoriesDialogAsync()
+    {
+        var dialog = new MyRepositoriesDialogViewModel(main, this);
+        main.ShowDialog(dialog);
+        await dialog.LoadAsync();
     }
 
     [RelayCommand]
-    private async Task LoadSelectedUserProjectsAsync()
+    private async Task OpenRepositorySearchDialogAsync()
     {
-        await RunSafelyAsync(async () =>
-        {
-            if (SelectedUser is null)
-            {
-                StatusMessage = "Выберите пользователя.";
-                return;
-            }
-
-            SelectedUserProjects.Clear();
-            var projects = await main.ProjectService.GetUserPublicProjectsAsync(SelectedUser.Id);
-            foreach (var project in projects)
-            {
-                SelectedUserProjects.Add(ToItem(project));
-            }
-
-            StatusMessage = projects.Count == 0
-                ? "У выбранного пользователя нет публичных проектов."
-                : $"Загружены публичные проекты пользователя {SelectedUser.Username}.";
-        });
+        var dialog = new RepositorySearchDialogViewModel(main, this);
+        main.ShowDialog(dialog);
+        await dialog.LoadAsync();
     }
-
-    [RelayCommand]
-    private Task RefreshAsync() => LoadAsync();
 
     [RelayCommand]
     private void OpenCreateProjectDialog() => main.ShowDialog(new CreateProjectDialogViewModel(main, this));
 
     [RelayCommand]
-    private void OpenUserSearchDialog() => main.ShowDialog(new UserSearchDialogViewModel(main));
-
-    [RelayCommand]
-    private async Task SearchAsync()
+    private void OpenEditProjectDialog()
     {
-        await RunSafelyAsync(async () =>
+        if (SelectedProjectPage is null)
         {
-            PublicProjects.Clear();
-            var projects = string.IsNullOrWhiteSpace(SearchQuery)
-                ? await main.ProjectService.GetPublicProjectsAsync()
-                : await main.ProjectService.SearchProjectsAsync(SearchQuery.Trim());
-
-            foreach (var project in projects)
-            {
-                PublicProjects.Add(ToItem(project));
-            }
-        });
-    }
-
-    [RelayCommand]
-    private void ChooseNewProjectDirectory()
-    {
-        var directory = main.FileDialogService.SelectFolder("Выберите рабочую директорию проекта");
-        if (!string.IsNullOrWhiteSpace(directory))
-        {
-            NewProjectDirectory = directory;
+            StatusMessage = "Сначала выберите репозиторий.";
+            return;
         }
-    }
 
-    [RelayCommand]
-    private async Task CreateProjectAsync()
-    {
-        await RunSafelyAsync(async () =>
-        {
-            if (string.IsNullOrWhiteSpace(NewProjectName))
-            {
-                StatusMessage = "Введите название проекта.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(NewProjectDirectory) || !Directory.Exists(NewProjectDirectory))
-            {
-                StatusMessage = "Выберите существующую рабочую директорию.";
-                return;
-            }
-
-            var project = await main.ProjectService.CreateProjectAsync(new CreateProjectRequest
-            {
-                Name = NewProjectName.Trim(),
-                Description = NewProjectDescription.Trim(),
-                Visibility = NewProjectVisibilityOption.Value
-            });
-
-            main.LocalProjectStorageService.SetDirectory(project.Id, NewProjectDirectory);
-            NewProjectName = string.Empty;
-            NewProjectDescription = string.Empty;
-            NewProjectDirectory = string.Empty;
-            NewProjectVisibilityOption = VisibilityOptions[0];
-            StatusMessage = "Проект создан.";
-            await LoadAsync();
-        });
+        main.ShowDialog(new EditProjectDialogViewModel(main, this, SelectedProjectPage));
     }
 
     [RelayCommand]
     private async Task OpenSelectedProjectAsync()
     {
-        var selectedProject = SelectedMyProject ?? SelectedPublicProject ?? SelectedUserProject;
-        if (selectedProject is null)
+        if (SelectedProject is null)
         {
-            StatusMessage = "Выберите проект.";
+            StatusMessage = "Сначала выберите репозиторий.";
             return;
         }
 
-        await main.ShowProjectDetailsAsync(selectedProject);
+        await main.ShowProjectDetailsAsync(SelectedProject);
     }
 
     [RelayCommand]
     private void AttachDirectoryToSelectedProject()
     {
-        var selectedProject = SelectedMyProject ?? SelectedPublicProject ?? SelectedUserProject;
-        if (selectedProject is null)
+        if (SelectedProject is null)
         {
-            StatusMessage = "Выберите проект.";
+            StatusMessage = "Сначала выберите репозиторий.";
             return;
         }
 
@@ -264,15 +150,30 @@ public partial class ProjectsPageViewModel : ObservableObject
             return;
         }
 
-        main.LocalProjectStorageService.SetDirectory(selectedProject.Id, directory);
-        selectedProject.LocalWorkingDirectory = directory;
+        main.LocalProjectStorageService.SetDirectory(SelectedProject.Id, directory);
+        SelectedProject.LocalWorkingDirectory = directory;
+        if (SelectedProjectPage is not null)
+        {
+            SelectedProjectPage.WorkingDirectory = directory;
+        }
+
+        NotifySelectionChanged();
         StatusMessage = "Локальная директория привязана.";
     }
 
     [RelayCommand]
     private void Logout() => main.Logout();
 
-    private ProjectItemViewModel ToItem(ProjectSummaryResponse project) =>
+    internal async Task SetSelectedProjectAsync(ProjectItemViewModel project)
+    {
+        var page = new ProjectDetailsPageViewModel(main, project.Id);
+        await page.RefreshAsync();
+        SelectedProjectPage = page;
+        SelectedProject = CreateItem(ToSummary(page.Project!));
+        NotifySelectionChanged();
+    }
+
+    internal ProjectItemViewModel CreateItem(ProjectSummaryResponse project) =>
         new(project, main.LocalProjectStorageService.GetDirectory(project.Id));
 
     private async Task RunSafelyAsync(Func<Task> action)
@@ -300,6 +201,39 @@ public partial class ProjectsPageViewModel : ObservableObject
             IsBusy = false;
         }
     }
+
+    private static ProjectSummaryResponse ToSummary(ProjectDetailsResponse details) =>
+        new()
+        {
+            Id = details.Id,
+            Name = details.Name,
+            Description = details.Description,
+            Visibility = details.Visibility,
+            OwnerId = details.OwnerId,
+            OwnerUsername = details.OwnerUsername,
+            DefaultBranchId = details.DefaultBranchId,
+            ActiveBranchId = details.ActiveBranchId,
+            BranchCount = details.Branches.Count,
+            CommitCount = details.RecentCommits.Count,
+            CreatedAt = details.CreatedAt,
+            UpdatedAt = details.UpdatedAt
+        };
+
+    private void NotifySelectionChanged()
+    {
+        OnPropertyChanged(nameof(HasSelectedProject));
+        OnPropertyChanged(nameof(SelectedProjectName));
+        OnPropertyChanged(nameof(SelectedProjectOwner));
+        OnPropertyChanged(nameof(SelectedProjectVisibility));
+        OnPropertyChanged(nameof(SelectedProjectDescription));
+        OnPropertyChanged(nameof(SelectedProjectLocalStatus));
+        OnPropertyChanged(nameof(SelectedProjectBranchCount));
+        OnPropertyChanged(nameof(SelectedProjectCommitCount));
+        OnPropertyChanged(nameof(SelectedProjectActiveBranch));
+        OnPropertyChanged(nameof(CanEditSelectedProject));
+    }
+
+    private void SelectedProjectPageOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifySelectionChanged();
 }
 
 public record ProjectVisibilityOption(ProjectVisibility Value, string Text);

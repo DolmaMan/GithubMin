@@ -57,12 +57,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     public string ActiveBranchName => Branches.FirstOrDefault(branch => branch.IsActive)?.Name ?? "Не выбрана";
     public int BranchCount => Branches.Count;
     public int CommitCount => Commits.Count;
+    public bool CanEditProject =>
+        Project is not null &&
+        string.Equals(Project.OwnerUsername, main.TokenStorageService.Username, StringComparison.OrdinalIgnoreCase);
 
     partial void OnProjectChanged(ProjectDetailsResponse? value)
     {
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(OwnerUsername));
         OnPropertyChanged(nameof(VisibilityText));
+        OnPropertyChanged(nameof(CanEditProject));
     }
 
     public async Task RefreshAsync()
@@ -107,6 +111,9 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
 
     [RelayCommand]
     private void OpenMergeDialog() => main.ShowDialog(new MergeDialogViewModel(main, this));
+
+    [RelayCommand]
+    private void OpenEditProjectDialog() => main.ShowDialog(new EditProjectDialogViewModel(main, null, this));
 
     [RelayCommand]
     private void ChangeDirectory()

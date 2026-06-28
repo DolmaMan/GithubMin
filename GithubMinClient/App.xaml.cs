@@ -19,7 +19,6 @@ public partial class App : System.Windows.Application
 
         var authService = new AuthService(apiClient);
         var projectService = new ProjectService(apiClient);
-        var userService = new UserService(apiClient);
         var branchService = new BranchService(apiClient);
         var commitService = new CommitService(apiClient, archiveService);
         var mergeService = new MergeService(apiClient);
@@ -27,7 +26,6 @@ public partial class App : System.Windows.Application
         var viewModel = new MainViewModel(
             authService,
             projectService,
-            userService,
             branchService,
             commitService,
             mergeService,

@@ -17,6 +17,7 @@ public class ProjectService(ApiClient apiClient)
     public Task<List<ProjectSummaryResponse>> GetUserPublicProjectsAsync(Guid userId) => apiClient.GetAsync<List<ProjectSummaryResponse>>($"api/users/{userId}/projects/public");
     public Task<ProjectDetailsResponse> CreateProjectAsync(CreateProjectRequest request) => apiClient.PostAsync<ProjectDetailsResponse>("api/projects", request);
     public Task<ProjectDetailsResponse> GetProjectAsync(Guid projectId) => apiClient.GetAsync<ProjectDetailsResponse>($"api/projects/{projectId}");
+    public Task<ProjectDetailsResponse> UpdateProjectAsync(Guid projectId, UpdateProjectRequest request) => apiClient.PutAsync<ProjectDetailsResponse>($"api/projects/{projectId}", request);
 }
 
 public class UserService(ApiClient apiClient)

@@ -116,6 +116,21 @@ public partial class CreateProjectDialogViewModel : DialogViewModelBase
             });
 
             Main.LocalProjectStorageService.SetDirectory(project.Id, NewProjectDirectory);
+            await page.SetSelectedProjectAsync(page.CreateItem(new ProjectSummaryResponse
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                Visibility = project.Visibility,
+                OwnerId = project.OwnerId,
+                OwnerUsername = project.OwnerUsername,
+                DefaultBranchId = project.DefaultBranchId,
+                ActiveBranchId = project.ActiveBranchId,
+                BranchCount = project.Branches.Count,
+                CommitCount = project.RecentCommits.Count,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt
+            }));
             await page.LoadAsync();
             page.StatusMessage = "Проект создан.";
             Main.CloseDialog();
@@ -123,77 +138,120 @@ public partial class CreateProjectDialogViewModel : DialogViewModelBase
     }
 }
 
-public partial class UserSearchDialogViewModel : DialogViewModelBase
+public partial class EditProjectDialogViewModel : DialogViewModelBase
 {
-    public UserSearchDialogViewModel(MainViewModel main) : base(main)
+    private readonly ProjectsPageViewModel? projectsPage;
+    private readonly ProjectDetailsPageViewModel projectPage;
+
+    public EditProjectDialogViewModel(MainViewModel main, ProjectsPageViewModel? projectsPage, ProjectDetailsPageViewModel projectPage) : base(main)
     {
+        this.projectsPage = projectsPage;
+        this.projectPage = projectPage;
+
+        VisibilityOptions =
+        [
+            new ProjectVisibilityOption(ProjectVisibility.Private, "Приватный"),
+            new ProjectVisibilityOption(ProjectVisibility.Public, "Публичный")
+        ];
+
+        Name = projectPage.Project?.Name ?? string.Empty;
+        Description = projectPage.Project?.Description ?? string.Empty;
+        Visibility = VisibilityOptions.First(option => option.Value == (projectPage.Project?.Visibility ?? ProjectVisibility.Private));
     }
 
-    public ObservableCollection<UserSearchItemViewModel> Users { get; } = [];
-    public ObservableCollection<ProjectItemViewModel> UserProjects { get; } = [];
+    public IReadOnlyList<ProjectVisibilityOption> VisibilityOptions { get; }
 
     [ObservableProperty]
-    private string searchQuery = string.Empty;
+    private string name = string.Empty;
 
     [ObservableProperty]
-    private UserSearchItemViewModel? selectedUser;
+    private string description = string.Empty;
+
+    [ObservableProperty]
+    private ProjectVisibilityOption visibility;
+
+    [RelayCommand]
+    private async Task SaveAsync()
+    {
+        await RunSafelyAsync(async () =>
+        {
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                StatusMessage = "Введите название проекта.";
+                return;
+            }
+
+            var updatedProject = await Main.ProjectService.UpdateProjectAsync(projectPage.ProjectId, new UpdateProjectRequest
+            {
+                Name = Name.Trim(),
+                Description = Description.Trim(),
+                Visibility = Visibility.Value
+            });
+
+            await projectPage.RefreshAsync();
+            if (projectsPage is not null)
+            {
+                await projectsPage.SetSelectedProjectAsync(projectsPage.CreateItem(new ProjectSummaryResponse
+                {
+                    Id = updatedProject.Id,
+                    Name = updatedProject.Name,
+                    Description = updatedProject.Description,
+                    Visibility = updatedProject.Visibility,
+                    OwnerId = updatedProject.OwnerId,
+                    OwnerUsername = updatedProject.OwnerUsername,
+                    DefaultBranchId = updatedProject.DefaultBranchId,
+                    ActiveBranchId = updatedProject.ActiveBranchId,
+                    BranchCount = updatedProject.Branches.Count,
+                    CommitCount = updatedProject.RecentCommits.Count,
+                    CreatedAt = updatedProject.CreatedAt,
+                    UpdatedAt = updatedProject.UpdatedAt
+                }));
+                projectsPage.StatusMessage = "Репозиторий обновлен.";
+            }
+            else
+            {
+                projectPage.StatusMessage = "Репозиторий обновлен.";
+            }
+
+            Main.CloseDialog();
+        });
+    }
+}
+
+public partial class MyRepositoriesDialogViewModel : DialogViewModelBase
+{
+    private readonly ProjectsPageViewModel page;
+
+    public MyRepositoriesDialogViewModel(MainViewModel main, ProjectsPageViewModel page) : base(main)
+    {
+        this.page = page;
+    }
+
+    public ObservableCollection<ProjectItemViewModel> Projects { get; } = [];
 
     [ObservableProperty]
     private ProjectItemViewModel? selectedProject;
 
-    [RelayCommand]
-    private async Task SearchAsync()
+    public async Task LoadAsync()
     {
         await RunSafelyAsync(async () =>
         {
-            Users.Clear();
-            UserProjects.Clear();
-            SelectedUser = null;
+            Projects.Clear();
             SelectedProject = null;
 
-            if (string.IsNullOrWhiteSpace(SearchQuery))
-            {
-                StatusMessage = "Введите имя пользователя для поиска.";
-                return;
-            }
-
-            var users = await Main.UserService.SearchUsersAsync(SearchQuery.Trim());
-            foreach (var user in users)
-            {
-                Users.Add(new UserSearchItemViewModel(user));
-            }
-
-            StatusMessage = users.Count == 0 ? "Пользователи не найдены." : string.Empty;
-        });
-    }
-
-    [RelayCommand]
-    private async Task LoadProjectsAsync()
-    {
-        await RunSafelyAsync(async () =>
-        {
-            if (SelectedUser is null)
-            {
-                StatusMessage = "Выберите пользователя.";
-                return;
-            }
-
-            UserProjects.Clear();
-            SelectedProject = null;
-            var projects = await Main.ProjectService.GetUserPublicProjectsAsync(SelectedUser.Id);
+            var projects = await Main.ProjectService.GetMyProjectsAsync();
             foreach (var project in projects)
             {
-                UserProjects.Add(new ProjectItemViewModel(project, Main.LocalProjectStorageService.GetDirectory(project.Id)));
+                Projects.Add(page.CreateItem(project));
             }
-
-            StatusMessage = projects.Count == 0
-                ? "У выбранного пользователя нет публичных проектов."
-                : $"Найдено {projects.Count} репозиториев пользователя {SelectedUser.Username}.";
         });
     }
 
     [RelayCommand]
-    private async Task OpenProjectAsync()
+    private async Task RefreshAsync() => await LoadAsync();
+
+    [RelayCommand]
+    private async Task ChooseProjectAsync()
     {
         if (SelectedProject is null)
         {
@@ -201,8 +259,67 @@ public partial class UserSearchDialogViewModel : DialogViewModelBase
             return;
         }
 
+        await page.SetSelectedProjectAsync(SelectedProject);
+        page.StatusMessage = $"Выбран репозиторий {SelectedProject.Name}.";
         Main.CloseDialog();
-        await Main.ShowProjectDetailsAsync(SelectedProject);
+    }
+}
+
+public partial class RepositorySearchDialogViewModel : DialogViewModelBase
+{
+    private readonly ProjectsPageViewModel page;
+
+    public RepositorySearchDialogViewModel(MainViewModel main, ProjectsPageViewModel page) : base(main)
+    {
+        this.page = page;
+    }
+
+    public ObservableCollection<ProjectItemViewModel> Projects { get; } = [];
+
+    [ObservableProperty]
+    private string searchQuery = string.Empty;
+
+    [ObservableProperty]
+    private ProjectItemViewModel? selectedProject;
+
+    public async Task LoadAsync()
+    {
+        await SearchAsync();
+    }
+
+    [RelayCommand]
+    private async Task SearchAsync()
+    {
+        await RunSafelyAsync(async () =>
+        {
+            Projects.Clear();
+            SelectedProject = null;
+
+            var projects = string.IsNullOrWhiteSpace(SearchQuery)
+                ? await Main.ProjectService.GetPublicProjectsAsync()
+                : await Main.ProjectService.SearchProjectsAsync(SearchQuery.Trim());
+
+            foreach (var project in projects)
+            {
+                Projects.Add(page.CreateItem(project));
+            }
+
+            StatusMessage = projects.Count == 0 ? "Репозитории не найдены." : string.Empty;
+        });
+    }
+
+    [RelayCommand]
+    private async Task ChooseProjectAsync()
+    {
+        if (SelectedProject is null)
+        {
+            StatusMessage = "Выберите репозиторий.";
+            return;
+        }
+
+        await page.SetSelectedProjectAsync(SelectedProject);
+        page.StatusMessage = $"Выбран репозиторий {SelectedProject.Name}.";
+        Main.CloseDialog();
     }
 }
 
