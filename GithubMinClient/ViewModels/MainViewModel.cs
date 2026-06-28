@@ -46,6 +46,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private ObservableObject currentPage;
 
+    [ObservableProperty]
+    private ObservableObject? currentDialog;
+
+    public bool HasDialog => CurrentDialog is not null;
+
+    partial void OnCurrentDialogChanged(ObservableObject? value) => OnPropertyChanged(nameof(HasDialog));
+
     public void OpenLoginPage(string? statusMessage = null)
     {
         var page = new LoginPageViewModel(this);
@@ -64,6 +71,10 @@ public partial class MainViewModel : ObservableObject
         TokenStorageService.ClearAuthentication();
         OpenLoginPage();
     }
+
+    public void ShowDialog(ObservableObject dialog) => CurrentDialog = dialog;
+
+    public void CloseDialog() => CurrentDialog = null;
 
     public void HandleAuthenticationExpired(string? statusMessage = null)
     {

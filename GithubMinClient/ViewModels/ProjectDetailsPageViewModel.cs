@@ -13,6 +13,8 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     public ObservableCollection<BranchResponse> Branches { get; } = [];
     public ObservableCollection<CommitSummaryResponse> Commits { get; } = [];
 
+    public Guid ProjectId => projectId;
+
     [ObservableProperty]
     private ProjectDetailsResponse? project;
 
@@ -50,8 +52,18 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     private bool isBusy;
 
     public string Title => Project is null ? "Проект" : $"{Project.Name} ({GetVisibilityText(Project.Visibility)})";
+    public string OwnerUsername => Project?.OwnerUsername ?? string.Empty;
+    public string VisibilityText => Project is null ? string.Empty : GetVisibilityText(Project.Visibility);
+    public string ActiveBranchName => Branches.FirstOrDefault(branch => branch.IsActive)?.Name ?? "Не выбрана";
+    public int BranchCount => Branches.Count;
+    public int CommitCount => Commits.Count;
 
-    partial void OnProjectChanged(ProjectDetailsResponse? value) => OnPropertyChanged(nameof(Title));
+    partial void OnProjectChanged(ProjectDetailsResponse? value)
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(OwnerUsername));
+        OnPropertyChanged(nameof(VisibilityText));
+    }
 
     public async Task RefreshAsync()
     {
@@ -75,11 +87,26 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
             SelectedBranch = Branches.FirstOrDefault(branch => branch.IsActive) ?? Branches.FirstOrDefault();
             SelectedSourceBranch = Branches.FirstOrDefault(branch => branch.Id == SelectedSourceBranch?.Id) ?? Branches.FirstOrDefault();
             SelectedTargetBranch = Branches.FirstOrDefault(branch => branch.Id == SelectedTargetBranch?.Id) ?? SelectedBranch;
+            OnPropertyChanged(nameof(ActiveBranchName));
+            OnPropertyChanged(nameof(BranchCount));
+            OnPropertyChanged(nameof(CommitCount));
         });
     }
 
     [RelayCommand]
     private Task ReloadAsync() => RefreshAsync();
+
+    [RelayCommand]
+    private void OpenDirectoryDialog() => main.ShowDialog(new ProjectDirectoryDialogViewModel(main, this));
+
+    [RelayCommand]
+    private void OpenBranchDialog() => main.ShowDialog(new BranchManagementDialogViewModel(main, this));
+
+    [RelayCommand]
+    private void OpenCommitDialog() => main.ShowDialog(new CreateCommitDialogViewModel(main, this));
+
+    [RelayCommand]
+    private void OpenMergeDialog() => main.ShowDialog(new MergeDialogViewModel(main, this));
 
     [RelayCommand]
     private void ChangeDirectory()

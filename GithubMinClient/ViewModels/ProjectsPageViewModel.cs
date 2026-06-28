@@ -41,6 +41,9 @@ public partial class ProjectsPageViewModel : ObservableObject
         {
             SelectedPublicProject = null;
         }
+
+        OnPropertyChanged(nameof(ActiveSelection));
+        OnPropertyChanged(nameof(HasActiveSelection));
     }
 
     partial void OnSelectedPublicProjectChanged(ProjectItemViewModel? value)
@@ -49,7 +52,13 @@ public partial class ProjectsPageViewModel : ObservableObject
         {
             SelectedMyProject = null;
         }
+
+        OnPropertyChanged(nameof(ActiveSelection));
+        OnPropertyChanged(nameof(HasActiveSelection));
     }
+
+    public ProjectItemViewModel? ActiveSelection => SelectedMyProject ?? SelectedPublicProject;
+    public bool HasActiveSelection => ActiveSelection is not null;
 
     [ObservableProperty]
     private string searchQuery = string.Empty;
@@ -158,6 +167,12 @@ public partial class ProjectsPageViewModel : ObservableObject
 
     [RelayCommand]
     private Task RefreshAsync() => LoadAsync();
+
+    [RelayCommand]
+    private void OpenCreateProjectDialog() => main.ShowDialog(new CreateProjectDialogViewModel(main, this));
+
+    [RelayCommand]
+    private void OpenUserSearchDialog() => main.ShowDialog(new UserSearchDialogViewModel(main));
 
     [RelayCommand]
     private async Task SearchAsync()

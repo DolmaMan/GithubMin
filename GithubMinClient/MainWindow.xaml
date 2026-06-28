@@ -312,6 +312,50 @@
             <Setter Property="Padding" Value="22" />
         </Style>
 
+        <Style x:Key="DialogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+            <Setter Property="Width" Value="720" />
+            <Setter Property="MaxHeight" Value="760" />
+            <Setter Property="Padding" Value="24" />
+        </Style>
+
+        <Style x:Key="DialogTitle" TargetType="TextBlock" BasedOn="{StaticResource PageHeading}">
+            <Setter Property="FontSize" Value="28" />
+        </Style>
+
+        <Style x:Key="HeaderButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinWidth" Value="92" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="HeaderGhostButton" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
+            <Setter Property="Background" Value="#21242B" />
+            <Setter Property="BorderBrush" Value="#555A66" />
+        </Style>
+
+        <Style x:Key="ModalCloseButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="MinWidth" Value="82" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="20,0,0,0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style x:Key="MetricCaption" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+
+        <Style x:Key="MetricValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
         <Style x:Key="SectionTitle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             <Setter Property="FontSize" Value="22" />
@@ -337,33 +381,26 @@
         <DataTemplate DataType="{x:Type vm:LoginPageViewModel}">
             <Grid Background="{StaticResource HeroBrush}">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.2*" />
+                    <ColumnDefinition Width="1.25*" />
                     <ColumnDefinition Width="0.95*" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="72,56,36,56" VerticalAlignment="Center">
-                    <Border Width="104" Height="104" CornerRadius="52" Background="#3A3450" HorizontalAlignment="Left">
-                        <TextBlock Text="GM" FontSize="34" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="0" Margin="72,56,40,56" VerticalAlignment="Center">
+                    <Border Width="110" Height="110" CornerRadius="55" Background="#3A3450" HorizontalAlignment="Left">
+                        <TextBlock Text="GM" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="GithubMin" Style="{StaticResource PageHeading}" FontSize="46" Margin="0,28,0,12" />
-                    <TextBlock Style="{StaticResource MutedText}"
-                               FontSize="18"
-                               Text="Локальная система контроля снапшотов с ветками, коммитами и слиянием в едином desktop-интерфейсе." />
-                    <Border Margin="0,32,0,0" Padding="22" CornerRadius="18" Background="#22242A" BorderBrush="#45495A" BorderThickness="1">
+                    <TextBlock Text="GithubMin" Style="{StaticResource PageHeading}" FontSize="48" Margin="0,30,0,12" />
+                    <Border Margin="0,34,0,0" Padding="24" CornerRadius="18" Background="#22242A" BorderBrush="#45495A" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="Что доступно" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" Margin="0,0,0,8" />
-                            <TextBlock Style="{StaticResource MutedText}" Text="Коммиты снимков состояния, управление ветками, merge с конфликтами, публичные и приватные репозитории." />
+                            <TextBlock Style="{StaticResource MutedText}" Text="Коммиты снимков состояния, ветки, merge с конфликтами, публичные и приватные репозитории, поиск по репозиториям и пользователям." />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <Border Grid.Column="1" Style="{StaticResource CardBorder}" MaxWidth="470" Margin="28,48,44,48" VerticalAlignment="Center" HorizontalAlignment="Stretch" MaxHeight="680">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,22,0">
+                <Border Grid.Column="1" Style="{StaticResource CardBorder}" MaxWidth="470" Margin="32,48,60,48" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                     <StackPanel>
                         <TextBlock Text="Вход" Style="{StaticResource PageHeading}" FontSize="32" Margin="0,0,0,6" />
-                        <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,22"
-                                   Text="Войдите по логину или email, чтобы открыть свои репозитории и продолжить работу." />
-
                         <TextBlock Style="{StaticResource FieldLabel}" Text="Логин или электронная почта" />
                         <TextBox Text="{Binding Login, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -375,24 +412,18 @@
                             <Button Content="Регистрация" Style="{StaticResource GhostButton}" Command="{Binding OpenRegisterCommand}" />
                         </WrapPanel>
 
-                        <ProgressBar Style="{StaticResource BusyBarStyle}"
-                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
                     </StackPanel>
-                    </ScrollViewer>
                 </Border>
             </Grid>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:RegisterPageViewModel}">
             <Grid Background="{StaticResource HeroBrush}">
-                <Border Style="{StaticResource CardBorder}" MaxWidth="520" Margin="28" HorizontalAlignment="Center" VerticalAlignment="Center" MaxHeight="720">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,22,0">
+                <Border Style="{StaticResource CardBorder}" MaxWidth="520" Margin="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="Регистрация" Style="{StaticResource PageHeading}" FontSize="32" Margin="0,0,0,6" />
-                        <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,22"
-                                   Text="Создайте аккаунт для работы с приватными и публичными репозиториями." />
-
                         <TextBlock Style="{StaticResource FieldLabel}" Text="Имя пользователя" />
                         <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -403,84 +434,323 @@
                         <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" />
 
                         <WrapPanel Margin="0,10,0,0">
-                            <Button Content="Создать" Command="{Binding RegisterCommand}" />
-                            <Button Content="Назад" Style="{StaticResource GhostButton}" Command="{Binding OpenLoginCommand}" />
+                            <Button Content="Создать аккаунт" Command="{Binding RegisterCommand}" />
+                            <Button Content="Назад ко входу" Style="{StaticResource GhostButton}" Command="{Binding OpenLoginCommand}" />
                         </WrapPanel>
 
-                        <ProgressBar Style="{StaticResource BusyBarStyle}"
-                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
                     </StackPanel>
-                    </ScrollViewer>
                 </Border>
             </Grid>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:ProjectsPageViewModel}">
-            <Grid Background="Transparent" Margin="24">
+            <Grid Background="Transparent" Margin="26">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Style="{StaticResource CardBorder}" Padding="24" Margin="0,0,0,18">
+                <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,16" Padding="20,18">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Left">
-                            <TextBlock Text="Репозитории" Style="{StaticResource PageHeading}" FontSize="32" />
-                            <TextBlock Style="{StaticResource MutedText}" Text="Управляйте своими проектами, находите публичные репозитории и просматривайте пользователей." />
+                            <TextBlock Text="Репозитории" Style="{StaticResource PageHeading}" FontSize="30" />
                         </StackPanel>
-                        <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Content="Обновить" Command="{Binding RefreshCommand}" />
-                            <Button Content="Выйти" Style="{StaticResource GhostButton}" Command="{Binding LogoutCommand}" />
-                        </WrapPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Button Content="Создать" Style="{StaticResource HeaderButton}" Command="{Binding OpenCreateProjectDialogCommand}" />
+                            <Button Content="Пользователи" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenUserSearchDialogCommand}" />
+                            <Button Content="Обновить" Style="{StaticResource HeaderGhostButton}" Command="{Binding RefreshCommand}" />
+                            <Button Content="Выйти" Style="{StaticResource HeaderGhostButton}" Command="{Binding LogoutCommand}" Margin="0" />
+                        </StackPanel>
                     </DockPanel>
                 </Border>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.1*" />
-                        <ColumnDefinition Width="14" />
-                        <ColumnDefinition Width="1.15*" />
+                        <ColumnDefinition Width="1.3*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="1.3*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="0.9*" />
                     </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Column="0">
+                    <GroupBox Grid.Column="0" Header="Мои репозитории">
+                        <DockPanel>
+                            <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                                <Button Content="Привязать папку" Style="{StaticResource GhostButton}" Command="{Binding AttachDirectoryToSelectedProjectCommand}" />
+                            </WrapPanel>
+                            <DataGrid ItemsSource="{Binding MyProjects}" SelectedItem="{Binding SelectedMyProject}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding OpenSelectedProjectCommand}" />
+                                </DataGrid.InputBindings>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="160" />
+                                    <DataGridTextColumn Header="Видимость" Binding="{Binding VisibilityText}" Width="110" />
+                                    <DataGridTextColumn Header="Ветки" Binding="{Binding BranchCount}" Width="70" />
+                                    <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="84" />
+                                    <DataGridTextColumn Header="Локальная папка" Binding="{Binding LocalStatus}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </GroupBox>
+
+                    <GroupBox Grid.Column="2" Header="Публичные репозитории">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                                <Button DockPanel.Dock="Right" Content="Найти" Command="{Binding SearchCommand}" />
+                                <TextBox Margin="0,0,12,0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
+                            </DockPanel>
+                            <DataGrid ItemsSource="{Binding PublicProjects}" SelectedItem="{Binding SelectedPublicProject}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid.InputBindings>
+                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding OpenSelectedProjectCommand}" />
+                                </DataGrid.InputBindings>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="160" />
+                                    <DataGridTextColumn Header="Владелец" Binding="{Binding OwnerUsername}" Width="130" />
+                                    <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="84" />
+                                    <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </GroupBox>
+
+                    <Border Grid.Column="4" Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Text="О выбранном репозитории" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,14" Text="Выберите репозиторий в одном из списков слева, чтобы быстро увидеть основную информацию." />
+
+                            <TextBlock Style="{StaticResource MetricCaption}" Text="Название" />
+                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding ActiveSelection.Name}" />
+
+                            <TextBlock Style="{StaticResource MetricCaption}" Text="Владелец" Margin="0,14,0,4" />
+                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding ActiveSelection.OwnerUsername}" />
+
+                            <TextBlock Style="{StaticResource MetricCaption}" Text="Видимость" Margin="0,14,0,4" />
+                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding ActiveSelection.VisibilityText}" />
+
+                            <TextBlock Style="{StaticResource MetricCaption}" Text="Локальная папка" Margin="0,14,0,4" />
+                            <TextBlock Style="{StaticResource MutedText}" Text="{Binding ActiveSelection.LocalStatus}" />
+
+                            <TextBlock Style="{StaticResource MetricCaption}" Text="Описание" Margin="0,14,0,4" />
+                            <TextBlock Style="{StaticResource MutedText}" Text="{Binding ActiveSelection.Description}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                    <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ProjectDetailsPageViewModel}">
+            <Grid Background="Transparent" Margin="26">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,16" Padding="20,18">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource PageHeading}" FontSize="28" />
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Button Content="Папка" Style="{StaticResource HeaderButton}" Command="{Binding OpenDirectoryDialogCommand}" />
+                            <Button Content="Ветки" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenBranchDialogCommand}" />
+                            <Button Content="Коммит" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenCommitDialogCommand}" />
+                            <Button Content="Merge" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenMergeDialogCommand}" />
+                            <Button Content="Обновить" Style="{StaticResource HeaderGhostButton}" Command="{Binding ReloadCommand}" />
+                            <Button Content="Назад" Style="{StaticResource HeaderGhostButton}" Command="{Binding BackCommand}" Margin="0" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.9*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="1.7*" />
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                        <StackPanel>
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Обзор проекта" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2" Margin="0,4,0,0">
+                                        <StackPanel Margin="0,0,16,16">
+                                            <TextBlock Style="{StaticResource MetricCaption}" Text="Владелец" />
+                                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding OwnerUsername}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,0,16">
+                                            <TextBlock Style="{StaticResource MetricCaption}" Text="Видимость" />
+                                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding VisibilityText}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,16,16">
+                                            <TextBlock Style="{StaticResource MetricCaption}" Text="Активная ветка" />
+                                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding ActiveBranchName}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,0,16">
+                                            <TextBlock Style="{StaticResource MetricCaption}" Text="Коммитов / веток" />
+                                            <TextBlock Style="{StaticResource MetricValue}" Text="{Binding CommitCount, StringFormat={}{0} коммитов}" />
+                                            <TextBlock Style="{StaticResource MutedText}" Text="{Binding BranchCount, StringFormat={}{0} веток}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Рабочая директория" />
+                                    <TextBlock Style="{StaticResource MutedText}" Text="{Binding WorkingDirectory}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="Подсказка" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Style="{StaticResource MutedText}" Text="Все операции по рабочей папке, веткам, коммитам и merge открываются из кнопок в заголовке. Основная рабочая область отведена под историю и обзор проекта." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="14" />
+                            <RowDefinition Height="240" />
+                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <GroupBox Header="Мои репозитории" Grid.Row="0">
+                        <GroupBox Grid.Row="0" Header="Ветки проекта">
+                            <DataGrid ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Ветка" Binding="{Binding Name}" Width="*" />
+                                    <DataGridTextColumn Header="Коммитов" Binding="{Binding CommitCount}" Width="90" />
+                                    <DataGridCheckBoxColumn Header="Активна" Binding="{Binding IsActive}" Width="80" />
+                                    <DataGridTextColumn Header="Создана" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="150" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+
+                        <GroupBox Grid.Row="2" Header="История коммитов и снапшотов">
                             <DockPanel>
                                 <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-                                    <Button Content="Открыть" Command="{Binding OpenSelectedProjectCommand}" />
-                                    <Button Content="Привязать папку" Style="{StaticResource GhostButton}" Command="{Binding AttachDirectoryToSelectedProjectCommand}" />
+                                    <Button Content="Скачать снапшот" Command="{Binding DownloadCommitCommand}" />
+                                    <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding RestoreCommitCommand}" />
                                 </WrapPanel>
-                                <DataGrid ItemsSource="{Binding MyProjects}" SelectedItem="{Binding SelectedMyProject}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid ItemsSource="{Binding Commits}" SelectedItem="{Binding SelectedCommit}" AutoGenerateColumns="False" IsReadOnly="True">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="150" />
-                                        <DataGridTextColumn Header="Вид" Binding="{Binding VisibilityText}" Width="95" />
-                                        <DataGridTextColumn Header="Ветки" Binding="{Binding BranchCount}" Width="60" />
-                                        <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="72" />
-                                        <DataGridTextColumn Header="Локальная папка" Binding="{Binding LocalStatus}" Width="*" />
+                                        <DataGridTextColumn Header="Дата" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="140" />
+                                        <DataGridTextColumn Header="Сообщение" Binding="{Binding Message}" Width="*" />
+                                        <DataGridTextColumn Header="Ветка" Binding="{Binding BranchName}" Width="120" />
+                                        <DataGridTextColumn Header="Автор" Binding="{Binding AuthorUsername}" Width="120" />
+                                        <DataGridTextColumn Header="Коммит" Binding="{Binding Id}" Width="210" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                    <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:CreateProjectDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,14,0">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,18">
+                            <StackPanel DockPanel.Dock="Left">
+                                <TextBlock Text="Новый репозиторий" Style="{StaticResource DialogTitle}" />
+                            </StackPanel>
+                            <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
+                        </DockPanel>
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Название" />
+                        <TextBox Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Описание" />
+                        <TextBox Text="{Binding NewProjectDescription, UpdateSourceTrigger=PropertyChanged}" Height="100" AcceptsReturn="True" TextWrapping="Wrap" />
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Видимость" />
+                        <ComboBox ItemsSource="{Binding VisibilityOptions}" SelectedItem="{Binding NewProjectVisibilityOption}" DisplayMemberPath="Text" />
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Рабочая директория" />
+                        <TextBox Text="{Binding NewProjectDirectory}" IsReadOnly="True" />
+
+                        <WrapPanel Margin="0,6,0,0">
+                            <Button Content="Выбрать папку" Command="{Binding ChooseDirectoryCommand}" />
+                            <Button Content="Создать репозиторий" Command="{Binding CreateCommand}" />
+                        </WrapPanel>
+
+                        <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:UserSearchDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}" Width="980">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,18">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="Поиск пользователей" Style="{StaticResource DialogTitle}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0,0,0,14">
+                        <Button DockPanel.Dock="Right" Content="Найти" Command="{Binding SearchCommand}" />
+                        <TextBox Margin="0,0,12,0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
+                    </DockPanel>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.9*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <GroupBox Grid.Column="0" Header="Пользователи">
+                            <DockPanel>
+                                <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                                    <Button Content="Показать репозитории" Command="{Binding LoadProjectsCommand}" />
+                                </WrapPanel>
+                                <DataGrid ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True">
+                                    <DataGrid.InputBindings>
+                                        <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding LoadProjectsCommand}" />
+                                    </DataGrid.InputBindings>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Пользователь" Binding="{Binding Username}" Width="*" />
+                                        <DataGridTextColumn Header="Зарегистрирован" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy}}" Width="130" />
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </DockPanel>
                         </GroupBox>
 
-                        <GroupBox Header="Публичные репозитории" Grid.Row="2">
+                        <GroupBox Grid.Column="2" Header="Публичные репозитории пользователя">
                             <DockPanel>
-                                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-                                    <TextBox Width="320" Margin="0,0,10,0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
-                                    <Button Content="Поиск" Command="{Binding SearchCommand}" />
-                                    <Button Content="Открыть" Style="{StaticResource GhostButton}" Command="{Binding OpenSelectedProjectCommand}" />
-                                </WrapPanel>
-                                <DataGrid ItemsSource="{Binding PublicProjects}" SelectedItem="{Binding SelectedPublicProject}" AutoGenerateColumns="False" IsReadOnly="True">
+                                <DataGrid ItemsSource="{Binding UserProjects}" SelectedItem="{Binding SelectedProject}" AutoGenerateColumns="False" IsReadOnly="True">
+                                    <DataGrid.InputBindings>
+                                        <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding OpenProjectCommand}" />
+                                    </DataGrid.InputBindings>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="150" />
-                                        <DataGridTextColumn Header="Владелец" Binding="{Binding OwnerUsername}" Width="130" />
-                                        <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="72" />
+                                        <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="160" />
+                                        <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="84" />
                                         <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -488,179 +758,166 @@
                         </GroupBox>
                     </Grid>
 
-                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
-                        <StackPanel>
-                                <TextBlock Text="Создать репозиторий" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                                           Text="Создайте новый репозиторий и сразу привяжите к нему локальную рабочую директорию." />
-
-                                <TextBlock Style="{StaticResource FieldLabel}" Text="Название" />
-                                <TextBox Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" />
-
-                                <TextBlock Style="{StaticResource FieldLabel}" Text="Описание" />
-                                <TextBox Text="{Binding NewProjectDescription, UpdateSourceTrigger=PropertyChanged}" Height="90" AcceptsReturn="True" TextWrapping="Wrap" />
-
-                                <TextBlock Style="{StaticResource FieldLabel}" Text="Видимость" />
-                                <ComboBox ItemsSource="{Binding VisibilityOptions}" SelectedItem="{Binding NewProjectVisibilityOption}" DisplayMemberPath="Text" />
-
-                                <TextBlock Style="{StaticResource FieldLabel}" Text="Рабочая директория" />
-                                <TextBox Text="{Binding NewProjectDirectory}" IsReadOnly="True" />
-                                <WrapPanel>
-                                    <Button Content="Выбрать папку" Command="{Binding ChooseNewProjectDirectoryCommand}" />
-                                    <Button Content="Создать" Command="{Binding CreateProjectCommand}" />
-                                </WrapPanel>
-
-                                <Separator Margin="0,18,0,18" Background="{StaticResource LineBrush}" />
-
-                                <TextBlock Text="Поиск пользователей" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,12"
-                                           Text="Найдите пользователя по имени и откройте список его публичных репозиториев." />
-                                <TextBox Text="{Binding UserSearchQuery, UpdateSourceTrigger=PropertyChanged}" />
-                                <WrapPanel>
-                                    <Button Content="Найти" Command="{Binding SearchUsersCommand}" />
-                                    <Button Content="Публичные репо" Style="{StaticResource GhostButton}" Command="{Binding LoadSelectedUserProjectsCommand}" />
-                                </WrapPanel>
-
-                                <DataGrid ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="150" MaxHeight="220">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Пользователь" Binding="{Binding Username}" Width="*" />
-                                        <DataGridTextColumn Header="Зарегистрирован" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy}}" Width="125" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-
-                                <TextBlock Text="Публичные репозитории пользователя" Style="{StaticResource SectionTitle}" Margin="0,18,0,10" />
-                                <Button Content="Открыть выбранный" Command="{Binding OpenSelectedProjectCommand}" HorizontalAlignment="Left" />
-                                <DataGrid ItemsSource="{Binding SelectedUserProjects}" SelectedItem="{Binding SelectedUserProject}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="170">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="130" />
-                                        <DataGridTextColumn Header="Коммиты" Binding="{Binding CommitCount}" Width="72" />
-                                        <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Border>
+                    <StackPanel Grid.Row="3" Margin="0,14,0,0">
+                        <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                    </StackPanel>
                 </Grid>
-
-                <StackPanel Grid.Row="2" Margin="0,14,0,0">
-                    <ProgressBar Style="{StaticResource BusyBarStyle}"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
-                </StackPanel>
-            </Grid>
+            </Border>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:ProjectDetailsPageViewModel}">
-            <Grid Background="Transparent" Margin="24">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <Border Grid.Row="0" Style="{StaticResource CardBorder}" Padding="24" Margin="0,0,0,18">
-                    <DockPanel>
+        <DataTemplate DataType="{x:Type vm:ProjectDirectoryDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}" Width="620">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,18">
                         <StackPanel DockPanel.Dock="Left">
-                            <TextBlock Text="{Binding Title}" Style="{StaticResource PageHeading}" FontSize="30" />
-                            <TextBlock Style="{StaticResource MutedText}" Text="{Binding Project.Description}" />
+                            <TextBlock Text="Рабочая директория" Style="{StaticResource DialogTitle}" />
                         </StackPanel>
-                        <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Content="Обновить" Command="{Binding ReloadCommand}" />
-                            <Button Content="Назад" Style="{StaticResource GhostButton}" Command="{Binding BackCommand}" />
-                        </WrapPanel>
+                        <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
                     </DockPanel>
-                </Border>
 
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.08*" />
-                        <ColumnDefinition Width="14" />
-                        <ColumnDefinition Width="2*" />
-                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Текущая папка" />
+                    <TextBox Text="{Binding DirectoryPath}" IsReadOnly="True" />
 
-                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="Рабочая директория" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,8"
-                                               Text="Коммиты и восстановление снапшотов работают с локальной привязанной папкой." />
-                                    <TextBox Text="{Binding WorkingDirectory}" IsReadOnly="True" />
-                                    <Button Content="Изменить директорию" Command="{Binding ChangeDirectoryCommand}" HorizontalAlignment="Left" />
-                                </StackPanel>
-                            </Border>
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="Выбрать папку" Command="{Binding ChooseDirectoryCommand}" />
+                        <Button Content="Сохранить" Command="{Binding SaveCommand}" />
+                    </WrapPanel>
 
-                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="Ветки" Style="{StaticResource SectionTitle}" />
-                                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}" DisplayMemberPath="Name" />
-                                    <Button Content="Переключить ветку" Command="{Binding SwitchBranchCommand}" HorizontalAlignment="Left" />
-
-                                    <Separator Margin="0,16,0,16" Background="{StaticResource LineBrush}" />
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Новая ветка" FontWeight="SemiBold" />
-                                    <TextBox Text="{Binding NewBranchName, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Стартовый коммит" />
-                                    <ComboBox ItemsSource="{Binding Commits}" SelectedItem="{Binding SelectedStartCommit}" DisplayMemberPath="Message" />
-                                    <Button Content="Создать ветку" Command="{Binding CreateBranchCommand}" HorizontalAlignment="Left" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="Новый коммит" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,8"
-                                               Text="Клиент архивирует рабочую директорию, исключая служебные каталоги, и отправляет snapshot на сервер." />
-                                    <TextBox Text="{Binding CommitMessage, UpdateSourceTrigger=PropertyChanged}" Height="76" AcceptsReturn="True" TextWrapping="Wrap" />
-                                    <Button Content="Создать коммит" Command="{Binding CreateCommitCommand}" HorizontalAlignment="Left" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardBorder}">
-                                <StackPanel>
-                                    <TextBlock Text="Слияние" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Style="{StaticResource MutedText}" Margin="0,0,0,8"
-                                               Text="Выберите исходную и целевую ветки. При конфликте система вернет список конфликтующих файлов." />
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Исходная ветка" />
-                                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedSourceBranch}" DisplayMemberPath="Name" />
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Целевая ветка" />
-                                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedTargetBranch}" DisplayMemberPath="Name" />
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Сообщение" />
-                                    <TextBox Text="{Binding MergeMessage, UpdateSourceTrigger=PropertyChanged}" />
-                                    <Button Content="Выполнить слияние" Command="{Binding MergeCommand}" HorizontalAlignment="Left" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <GroupBox Grid.Column="2" Header="Снапшоты и коммиты">
-                        <DockPanel>
-                            <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-                                <Button Content="Скачать снапшот" Command="{Binding DownloadCommitCommand}" />
-                                <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding RestoreCommitCommand}" />
-                            </WrapPanel>
-                            <DataGrid ItemsSource="{Binding Commits}" SelectedItem="{Binding SelectedCommit}" AutoGenerateColumns="False" IsReadOnly="True">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Дата" Binding="{Binding CreatedAt, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="130" />
-                                    <DataGridTextColumn Header="Сообщение" Binding="{Binding Message}" Width="*" />
-                                    <DataGridTextColumn Header="Ветка" Binding="{Binding BranchName}" Width="104" />
-                                    <DataGridTextColumn Header="Автор" Binding="{Binding AuthorUsername}" Width="110" />
-                                    <DataGridTextColumn Header="Коммит" Binding="{Binding Id}" Width="210" />
-                                    <DataGridTextColumn Header="Родитель" Binding="{Binding ParentCommitId}" Width="210" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </DockPanel>
-                    </GroupBox>
-                </Grid>
-
-                <StackPanel Grid.Row="2" Margin="0,14,0,0">
-                    <ProgressBar Style="{StaticResource BusyBarStyle}"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
                     <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
                 </StackPanel>
-            </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:BranchManagementDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}" Width="860">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,18">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="Управление ветками" Style="{StaticResource DialogTitle}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
+                    </DockPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="0.9*" />
+                        </Grid.ColumnDefinitions>
+
+                        <GroupBox Grid.Column="0" Header="Существующие ветки">
+                            <DockPanel>
+                                <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                                    <Button Content="Сделать активной" Command="{Binding SwitchCommand}" />
+                                </WrapPanel>
+                                <DataGrid ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}" AutoGenerateColumns="False" IsReadOnly="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Ветка" Binding="{Binding Name}" Width="*" />
+                                        <DataGridTextColumn Header="Коммитов" Binding="{Binding CommitCount}" Width="90" />
+                                        <DataGridCheckBoxColumn Header="Активна" Binding="{Binding IsActive}" Width="80" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </GroupBox>
+
+                        <GroupBox Grid.Column="2" Header="Новая ветка">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Имя ветки" />
+                                <TextBox Text="{Binding NewBranchName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Стартовый коммит" />
+                                <ComboBox ItemsSource="{Binding Commits}" SelectedItem="{Binding SelectedStartCommit}" DisplayMemberPath="Message" />
+
+                                <Button Content="Создать ветку" Command="{Binding CreateCommand}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                        <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:CreateCommitDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}" Width="700">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,18">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="Новый коммит" Style="{StaticResource DialogTitle}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
+                    </DockPanel>
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Ветка" />
+                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}" DisplayMemberPath="Name" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Рабочая директория" />
+                    <TextBox Text="{Binding WorkingDirectory}" IsReadOnly="True" />
+                    <Button Content="Выбрать папку" Command="{Binding ChooseDirectoryCommand}" HorizontalAlignment="Left" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Сообщение коммита" />
+                    <TextBox Text="{Binding CommitMessage, UpdateSourceTrigger=PropertyChanged}" Height="100" AcceptsReturn="True" TextWrapping="Wrap" />
+
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="Создать коммит" Command="{Binding CreateCommand}" />
+                    </WrapPanel>
+
+                    <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MergeDialogViewModel}">
+            <Border Style="{StaticResource DialogCard}" Width="660">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,18">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="Слияние веток" Style="{StaticResource DialogTitle}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Закрыть" Style="{StaticResource ModalCloseButton}" Command="{Binding CloseCommand}" />
+                    </DockPanel>
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Исходная ветка" />
+                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedSourceBranch}" DisplayMemberPath="Name" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Целевая ветка" />
+                    <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedTargetBranch}" DisplayMemberPath="Name" />
+
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Сообщение merge-коммита" />
+                    <TextBox Text="{Binding MergeMessage, UpdateSourceTrigger=PropertyChanged}" Height="90" AcceptsReturn="True" TextWrapping="Wrap" />
+
+                    <Button Content="Выполнить merge" Command="{Binding MergeCommand}" HorizontalAlignment="Left" />
+
+                    <ProgressBar Style="{StaticResource BusyBarStyle}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding StatusMessage}" />
+                </StackPanel>
+            </Border>
         </DataTemplate>
     </Window.Resources>
 
-    <ContentControl Content="{Binding CurrentPage}" />
+    <Grid Background="{StaticResource WindowBrush}">
+        <ContentControl Content="{Binding CurrentPage}" />
+
+        <Border Panel.ZIndex="10"
+                Background="#AA111319"
+                Visibility="{Binding HasDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Margin="34">
+                <ContentControl Content="{Binding CurrentDialog}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+    </Grid>
 </Window>
