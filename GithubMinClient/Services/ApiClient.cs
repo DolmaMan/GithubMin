@@ -2,6 +2,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Net.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,10 +11,19 @@ namespace GithubMinClient.Services;
 
 public class ApiClient(TokenStorageService tokenStorageService)
 {
-    private readonly HttpClient _httpClient = new()
+    private readonly Uri[] _baseAddresses =
+    [
+        new("https://localhost:7051/"),
+        new("http://localhost:5062/")
+    ];
+
+    private int _preferredBaseAddressIndex;
+
+    private readonly HttpClient _httpClient = new(new HttpClientHandler
     {
-        BaseAddress = new Uri("http://localhost:5062/")
-    };
+        ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
+            request.RequestUri?.IsLoopback == true || errors == SslPolicyErrors.None
+    });
 
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -22,13 +32,19 @@ public class ApiClient(TokenStorageService tokenStorageService)
     };
 
     public Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default) =>
-        SendAsync<T>(() => new HttpRequestMessage(HttpMethod.Get, url), cancellationToken);
+        SendAsync<T>(baseAddress => new HttpRequestMessage(HttpMethod.Get, CreateRequestUri(baseAddress, url)), cancellationToken);
 
     public Task<T> PostAsync<T>(string url, object body, CancellationToken cancellationToken = default) =>
-        SendAsync<T>(() => new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body, options: _jsonOptions) }, cancellationToken);
+        SendAsync<T>(baseAddress => new HttpRequestMessage(HttpMethod.Post, CreateRequestUri(baseAddress, url))
+        {
+            Content = JsonContent.Create(body, options: _jsonOptions)
+        }, cancellationToken);
 
     public Task<T> PutAsync<T>(string url, object body, CancellationToken cancellationToken = default) =>
-        SendAsync<T>(() => new HttpRequestMessage(HttpMethod.Put, url) { Content = JsonContent.Create(body, options: _jsonOptions) }, cancellationToken);
+        SendAsync<T>(baseAddress => new HttpRequestMessage(HttpMethod.Put, CreateRequestUri(baseAddress, url))
+        {
+            Content = JsonContent.Create(body, options: _jsonOptions)
+        }, cancellationToken);
 
     public async Task<T> PostMultipartAsync<T>(
         string url,
@@ -37,45 +53,81 @@ public class ApiClient(TokenStorageService tokenStorageService)
         string archivePath,
         CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, url);
-        using var content = new MultipartFormDataContent();
-        content.Add(new StringContent(message), "Message");
-
-        if (branchId.HasValue)
+        return await SendAsync<T>(baseAddress =>
         {
-            content.Add(new StringContent(branchId.Value.ToString()), "BranchId");
-        }
+            var request = new HttpRequestMessage(HttpMethod.Post, CreateRequestUri(baseAddress, url));
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(message), "Message");
 
-        await using var stream = File.OpenRead(archivePath);
-        using var fileContent = new StreamContent(stream);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
-        content.Add(fileContent, "Archive", Path.GetFileName(archivePath));
-        request.Content = content;
+            if (branchId.HasValue)
+            {
+                content.Add(new StringContent(branchId.Value.ToString()), "BranchId");
+            }
 
-        ApplyAuthorization(request);
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        return await ReadResponseAsync<T>(response, cancellationToken);
+            var stream = File.OpenRead(archivePath);
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+            content.Add(fileContent, "Archive", Path.GetFileName(archivePath));
+            request.Content = content;
+            return request;
+        }, cancellationToken);
     }
 
     public async Task DownloadAsync(string url, string destinationPath, CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        ApplyAuthorization(request);
+        await SendAsync(
+            baseAddress => new HttpRequestMessage(HttpMethod.Get, CreateRequestUri(baseAddress, url)),
+            async response =>
+            {
+                await EnsureSuccessAsync(response, cancellationToken);
 
-        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-
-        await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var output = File.Create(destinationPath);
-        await input.CopyToAsync(output, cancellationToken);
+                await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var output = File.Create(destinationPath);
+                await input.CopyToAsync(output, cancellationToken);
+                return true;
+            },
+            cancellationToken,
+            HttpCompletionOption.ResponseHeadersRead);
     }
 
-    private async Task<T> SendAsync<T>(Func<HttpRequestMessage> requestFactory, CancellationToken cancellationToken)
+    private Task<T> SendAsync<T>(Func<Uri, HttpRequestMessage> requestFactory, CancellationToken cancellationToken)
     {
-        using var request = requestFactory();
-        ApplyAuthorization(request);
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        return await ReadResponseAsync<T>(response, cancellationToken);
+        return SendAsync(
+            requestFactory,
+            response => ReadResponseAsync<T>(response, cancellationToken),
+            cancellationToken,
+            HttpCompletionOption.ResponseContentRead);
+    }
+
+    private async Task<T> SendAsync<T>(
+        Func<Uri, HttpRequestMessage> requestFactory,
+        Func<HttpResponseMessage, Task<T>> responseHandler,
+        CancellationToken cancellationToken,
+        HttpCompletionOption completionOption)
+    {
+        Exception? lastException = null;
+
+        foreach (var baseAddress in GetOrderedBaseAddresses())
+        {
+            try
+            {
+                using var request = requestFactory(baseAddress);
+                ApplyAuthorization(request);
+                using var response = await _httpClient.SendAsync(request, completionOption, cancellationToken);
+                RememberSuccessfulBaseAddress(baseAddress);
+                return await responseHandler(response);
+            }
+            catch (HttpRequestException exception)
+            {
+                lastException = exception;
+            }
+            catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                lastException = exception;
+            }
+        }
+
+        throw lastException ?? new HttpRequestException("Не удалось подключиться к серверу.");
     }
 
     private async Task<T> ReadResponseAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
@@ -160,7 +212,7 @@ public class ApiClient(TokenStorageService tokenStorageService)
         }
         catch
         {
-            return GetStatusError(statusCode);
+            // If the server returned plain text, use it below.
         }
 
         var trimmed = responseBody.Trim('"');
@@ -186,6 +238,33 @@ public class ApiClient(TokenStorageService tokenStorageService)
         if (!string.IsNullOrWhiteSpace(tokenStorageService.AccessToken))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenStorageService.AccessToken);
+        }
+    }
+
+    private Uri CreateRequestUri(Uri baseAddress, string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri)
+            ? absoluteUri
+            : new Uri(baseAddress, url);
+
+    private IEnumerable<Uri> GetOrderedBaseAddresses()
+    {
+        yield return _baseAddresses[_preferredBaseAddressIndex];
+
+        for (var index = 0; index < _baseAddresses.Length; index++)
+        {
+            if (index != _preferredBaseAddressIndex)
+            {
+                yield return _baseAddresses[index];
+            }
+        }
+    }
+
+    private void RememberSuccessfulBaseAddress(Uri baseAddress)
+    {
+        var index = Array.IndexOf(_baseAddresses, baseAddress);
+        if (index >= 0)
+        {
+            _preferredBaseAddressIndex = index;
         }
     }
 }

@@ -9,6 +9,7 @@ public class NotificationService
 {
     public void Info(string message) => System.Windows.MessageBox.Show(message, "Мини-гит", MessageBoxButton.OK, MessageBoxImage.Information);
     public void Error(string message) => System.Windows.MessageBox.Show(message, "Мини-гит", MessageBoxButton.OK, MessageBoxImage.Error);
+    public bool Confirm(string message) => System.Windows.MessageBox.Show(message, "Мини-гит", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 }
 
 public class FileDialogService

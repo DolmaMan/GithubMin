@@ -61,6 +61,44 @@ public class ArchiveService
         }
     }
 
+    public Task ExtractArchiveAsync(string archivePath, string destinationDirectory)
+    {
+        return Task.Run(() =>
+        {
+            if (string.IsNullOrWhiteSpace(archivePath) || !File.Exists(archivePath))
+            {
+                throw new InvalidOperationException("Архив снапшота не найден.");
+            }
+
+            if (string.IsNullOrWhiteSpace(destinationDirectory))
+            {
+                throw new InvalidOperationException("Не выбрана директория для восстановления.");
+            }
+
+            Directory.CreateDirectory(destinationDirectory);
+
+            using var archive = ZipFile.OpenRead(archivePath);
+            foreach (var entry in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(entry.Name))
+                {
+                    continue;
+                }
+
+                var normalizedName = entry.FullName.Replace('/', Path.DirectorySeparatorChar);
+                var targetPath = Path.GetFullPath(Path.Combine(destinationDirectory, normalizedName));
+                var rootPath = Path.GetFullPath(destinationDirectory) + Path.DirectorySeparatorChar;
+                if (!targetPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Архив содержит небезопасные пути к файлам.");
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                entry.ExtractToFile(targetPath, overwrite: true);
+            }
+        });
+    }
+
     private static bool ShouldSkipFile(string rootDirectory, string filePath)
     {
         var relativePath = Path.GetRelativePath(rootDirectory, filePath);

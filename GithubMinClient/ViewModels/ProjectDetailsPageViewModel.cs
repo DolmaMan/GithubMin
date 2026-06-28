@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GithubMinClient.Models;
@@ -191,6 +192,42 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     }
 
     [RelayCommand]
+    private async Task RestoreCommitAsync()
+    {
+        await RunSafelyAsync(async () =>
+        {
+            if (SelectedCommit is null)
+            {
+                StatusMessage = "Выберите снапшот.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(WorkingDirectory) || !Directory.Exists(WorkingDirectory))
+            {
+                var directory = main.FileDialogService.SelectFolder("Выберите директорию для восстановления снапшота");
+                if (string.IsNullOrWhiteSpace(directory))
+                {
+                    StatusMessage = "Директория восстановления не выбрана.";
+                    return;
+                }
+
+                main.LocalProjectStorageService.SetDirectory(projectId, directory);
+                WorkingDirectory = directory;
+            }
+
+            var confirmed = main.NotificationService.Confirm("Восстановление снапшота перезапишет файлы с совпадающими именами в рабочей директории. Продолжить?");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            StatusMessage = "Скачивание и восстановление снапшота...";
+            await main.CommitService.RestoreCommitAsync(SelectedCommit.Id, WorkingDirectory);
+            StatusMessage = "Снапшот восстановлен в рабочую директорию.";
+        });
+    }
+
+    [RelayCommand]
     private async Task MergeAsync()
     {
         await RunSafelyAsync(async () =>
@@ -224,6 +261,10 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
             IsBusy = true;
             StatusMessage = string.Empty;
             await action();
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            main.HandleAuthenticationExpired();
         }
         catch (ApiException exception)
         {

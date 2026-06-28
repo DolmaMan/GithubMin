@@ -37,7 +37,6 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
             .Where(commit => commit.ProjectId == projectId)
             .Include(commit => commit.Author)
             .Include(commit => commit.Branch)
-            .OrderByDescending(commit => commit.CreatedAt)
             .AsQueryable();
 
         if (branchId.HasValue)
@@ -46,7 +45,10 @@ public class CommitsController(AppDbContext dbContext, SnapshotStorageService sn
         }
 
         var commits = await commitsQuery.ToListAsync(cancellationToken);
-        return Ok(commits.Select(commit => commit.ToSummaryResponse()).ToArray());
+        return Ok(commits
+            .OrderByDescending(commit => commit.CreatedAt)
+            .Select(commit => commit.ToSummaryResponse())
+            .ToArray());
     }
 
     [Authorize]

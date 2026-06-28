@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GithubMinClient.Models;
@@ -19,6 +20,8 @@ public partial class ProjectsPageViewModel : ObservableObject
 
     public ObservableCollection<ProjectItemViewModel> MyProjects { get; } = [];
     public ObservableCollection<ProjectItemViewModel> PublicProjects { get; } = [];
+    public ObservableCollection<UserSearchItemViewModel> Users { get; } = [];
+    public ObservableCollection<ProjectItemViewModel> SelectedUserProjects { get; } = [];
 
     public IReadOnlyList<ProjectVisibilityOption> VisibilityOptions { get; } =
     [
@@ -52,6 +55,9 @@ public partial class ProjectsPageViewModel : ObservableObject
     private string searchQuery = string.Empty;
 
     [ObservableProperty]
+    private string userSearchQuery = string.Empty;
+
+    [ObservableProperty]
     private string newProjectName = string.Empty;
 
     [ObservableProperty]
@@ -67,6 +73,12 @@ public partial class ProjectsPageViewModel : ObservableObject
     private string statusMessage = string.Empty;
 
     [ObservableProperty]
+    private UserSearchItemViewModel? selectedUser;
+
+    [ObservableProperty]
+    private ProjectItemViewModel? selectedUserProject;
+
+    [ObservableProperty]
     private bool isBusy;
 
     public async Task LoadAsync()
@@ -75,6 +87,10 @@ public partial class ProjectsPageViewModel : ObservableObject
         {
             MyProjects.Clear();
             PublicProjects.Clear();
+            Users.Clear();
+            SelectedUserProjects.Clear();
+            SelectedUser = null;
+            SelectedUserProject = null;
 
             var myProjects = await main.ProjectService.GetMyProjectsAsync();
             foreach (var project in myProjects)
@@ -87,6 +103,56 @@ public partial class ProjectsPageViewModel : ObservableObject
             {
                 PublicProjects.Add(ToItem(project));
             }
+        });
+    }
+
+    [RelayCommand]
+    private async Task SearchUsersAsync()
+    {
+        await RunSafelyAsync(async () =>
+        {
+            Users.Clear();
+            SelectedUserProjects.Clear();
+            SelectedUser = null;
+            SelectedUserProject = null;
+
+            if (string.IsNullOrWhiteSpace(UserSearchQuery))
+            {
+                StatusMessage = "Введите имя пользователя для поиска.";
+                return;
+            }
+
+            var users = await main.UserService.SearchUsersAsync(UserSearchQuery.Trim());
+            foreach (var user in users)
+            {
+                Users.Add(new UserSearchItemViewModel(user));
+            }
+
+            StatusMessage = users.Count == 0 ? "Пользователи не найдены." : string.Empty;
+        });
+    }
+
+    [RelayCommand]
+    private async Task LoadSelectedUserProjectsAsync()
+    {
+        await RunSafelyAsync(async () =>
+        {
+            if (SelectedUser is null)
+            {
+                StatusMessage = "Выберите пользователя.";
+                return;
+            }
+
+            SelectedUserProjects.Clear();
+            var projects = await main.ProjectService.GetUserPublicProjectsAsync(SelectedUser.Id);
+            foreach (var project in projects)
+            {
+                SelectedUserProjects.Add(ToItem(project));
+            }
+
+            StatusMessage = projects.Count == 0
+                ? "У выбранного пользователя нет публичных проектов."
+                : $"Загружены публичные проекты пользователя {SelectedUser.Username}.";
         });
     }
 
@@ -157,7 +223,7 @@ public partial class ProjectsPageViewModel : ObservableObject
     [RelayCommand]
     private async Task OpenSelectedProjectAsync()
     {
-        var selectedProject = SelectedMyProject ?? SelectedPublicProject;
+        var selectedProject = SelectedMyProject ?? SelectedPublicProject ?? SelectedUserProject;
         if (selectedProject is null)
         {
             StatusMessage = "Выберите проект.";
@@ -170,7 +236,7 @@ public partial class ProjectsPageViewModel : ObservableObject
     [RelayCommand]
     private void AttachDirectoryToSelectedProject()
     {
-        var selectedProject = SelectedMyProject ?? SelectedPublicProject;
+        var selectedProject = SelectedMyProject ?? SelectedPublicProject ?? SelectedUserProject;
         if (selectedProject is null)
         {
             StatusMessage = "Выберите проект.";
@@ -189,7 +255,7 @@ public partial class ProjectsPageViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Logout() => main.ShowLogin();
+    private void Logout() => main.Logout();
 
     private ProjectItemViewModel ToItem(ProjectSummaryResponse project) =>
         new(project, main.LocalProjectStorageService.GetDirectory(project.Id));
@@ -201,6 +267,10 @@ public partial class ProjectsPageViewModel : ObservableObject
             IsBusy = true;
             StatusMessage = string.Empty;
             await action();
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            main.HandleAuthenticationExpired();
         }
         catch (ApiException exception)
         {

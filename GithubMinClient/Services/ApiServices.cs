@@ -1,3 +1,4 @@
+using System.IO;
 using GithubMinClient.Models;
 
 namespace GithubMinClient.Services;
@@ -13,8 +14,14 @@ public class ProjectService(ApiClient apiClient)
     public Task<List<ProjectSummaryResponse>> GetMyProjectsAsync() => apiClient.GetAsync<List<ProjectSummaryResponse>>("api/projects/my");
     public Task<List<ProjectSummaryResponse>> GetPublicProjectsAsync() => apiClient.GetAsync<List<ProjectSummaryResponse>>("api/projects/public");
     public Task<List<ProjectSummaryResponse>> SearchProjectsAsync(string query) => apiClient.GetAsync<List<ProjectSummaryResponse>>($"api/projects/search?query={Uri.EscapeDataString(query)}");
+    public Task<List<ProjectSummaryResponse>> GetUserPublicProjectsAsync(Guid userId) => apiClient.GetAsync<List<ProjectSummaryResponse>>($"api/users/{userId}/projects/public");
     public Task<ProjectDetailsResponse> CreateProjectAsync(CreateProjectRequest request) => apiClient.PostAsync<ProjectDetailsResponse>("api/projects", request);
     public Task<ProjectDetailsResponse> GetProjectAsync(Guid projectId) => apiClient.GetAsync<ProjectDetailsResponse>($"api/projects/{projectId}");
+}
+
+public class UserService(ApiClient apiClient)
+{
+    public Task<List<PublicUserResponse>> SearchUsersAsync(string query) => apiClient.GetAsync<List<PublicUserResponse>>($"api/users/search?query={Uri.EscapeDataString(query)}");
 }
 
 public class BranchService(ApiClient apiClient)
@@ -49,6 +56,20 @@ public class CommitService(ApiClient apiClient, ArchiveService archiveService)
     }
 
     public Task DownloadCommitAsync(Guid commitId, string destinationPath) => apiClient.DownloadAsync($"api/commits/{commitId}/download", destinationPath);
+
+    public async Task RestoreCommitAsync(Guid commitId, string workingDirectory)
+    {
+        var archivePath = Path.Combine(Path.GetTempPath(), $"githubmin-restore-{Guid.NewGuid():N}.zip");
+        try
+        {
+            await DownloadCommitAsync(commitId, archivePath);
+            await archiveService.ExtractArchiveAsync(archivePath, workingDirectory);
+        }
+        finally
+        {
+            archiveService.TryDeleteArchive(archivePath);
+        }
+    }
 }
 
 public class MergeService(ApiClient apiClient)

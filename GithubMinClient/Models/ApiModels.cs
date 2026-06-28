@@ -34,6 +34,13 @@ public class UserResponse
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+public class PublicUserResponse
+{
+    public Guid Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
 public class CreateProjectRequest
 {
     public string Name { get; set; } = string.Empty;

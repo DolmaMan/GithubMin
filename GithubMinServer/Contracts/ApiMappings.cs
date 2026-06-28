@@ -7,6 +7,9 @@ public static class ApiMappings
     public static UserResponse ToResponse(this User user) =>
         new(user.Id, user.Username, user.Email, user.CreatedAt);
 
+    public static PublicUserResponse ToPublicResponse(this User user) =>
+        new(user.Id, user.Username, user.CreatedAt);
+
     public static ProjectSummaryResponse ToSummaryResponse(this Project project) =>
         new(
             project.Id,

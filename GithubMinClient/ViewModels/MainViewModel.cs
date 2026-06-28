@@ -9,6 +9,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(
         AuthService authService,
         ProjectService projectService,
+        UserService userService,
         BranchService branchService,
         CommitService commitService,
         MergeService mergeService,
@@ -19,6 +20,7 @@ public partial class MainViewModel : ObservableObject
     {
         AuthService = authService;
         ProjectService = projectService;
+        UserService = userService;
         BranchService = branchService;
         CommitService = commitService;
         MergeService = mergeService;
@@ -27,11 +29,12 @@ public partial class MainViewModel : ObservableObject
         FileDialogService = fileDialogService;
         NotificationService = notificationService;
 
-        CurrentPage = new LoginPageViewModel(this);
+        CurrentPage = tokenStorageService.HasActiveSession ? new ProjectsPageViewModel(this) : new LoginPageViewModel(this);
     }
 
     internal AuthService AuthService { get; }
     internal ProjectService ProjectService { get; }
+    internal UserService UserService { get; }
     internal BranchService BranchService { get; }
     internal CommitService CommitService { get; }
     internal MergeService MergeService { get; }
@@ -43,13 +46,44 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private ObservableObject currentPage;
 
-    public void ShowLogin()
+    public void OpenLoginPage(string? statusMessage = null)
     {
-        TokenStorageService.Clear();
-        CurrentPage = new LoginPageViewModel(this);
+        var page = new LoginPageViewModel(this);
+        if (!string.IsNullOrWhiteSpace(statusMessage))
+        {
+            page.StatusMessage = statusMessage;
+        }
+
+        CurrentPage = page;
     }
 
     public void ShowRegister() => CurrentPage = new RegisterPageViewModel(this);
+
+    public void Logout()
+    {
+        TokenStorageService.ClearAuthentication();
+        OpenLoginPage();
+    }
+
+    public void HandleAuthenticationExpired(string? statusMessage = null)
+    {
+        TokenStorageService.ClearAuthentication();
+        OpenLoginPage(statusMessage ?? "Сохраненная сессия завершилась. Войдите снова.");
+    }
+
+    public async Task InitializeAsync()
+    {
+        if (TokenStorageService.IsSessionExpired)
+        {
+            HandleAuthenticationExpired("Срок действия сохраненной сессии истек. Войдите снова.");
+            return;
+        }
+
+        if (TokenStorageService.HasActiveSession)
+        {
+            await ShowProjectsAsync();
+        }
+    }
 
     public async Task ShowProjectsAsync()
     {

@@ -31,4 +31,6 @@ public class LoginRequest
 
 public record UserResponse(Guid Id, string Username, string Email, DateTimeOffset CreatedAt);
 
+public record PublicUserResponse(Guid Id, string Username, DateTimeOffset CreatedAt);
+
 public record AuthResponse(string AccessToken, DateTimeOffset ExpiresAt, UserResponse User);

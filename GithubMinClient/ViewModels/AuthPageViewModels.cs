@@ -8,8 +8,16 @@ using System.Text.RegularExpressions;
 
 namespace GithubMinClient.ViewModels;
 
-public partial class LoginPageViewModel(MainViewModel main) : ObservableObject
+public partial class LoginPageViewModel : ObservableObject
 {
+    private readonly MainViewModel main;
+
+    public LoginPageViewModel(MainViewModel main)
+    {
+        this.main = main;
+        Login = main.TokenStorageService.LastLogin;
+    }
+
     [ObservableProperty]
     private string login = string.Empty;
 
@@ -35,7 +43,7 @@ public partial class LoginPageViewModel(MainViewModel main) : ObservableObject
             }
 
             var response = await main.AuthService.LoginAsync(new LoginRequest { Login = Login.Trim(), Password = Password });
-            main.TokenStorageService.SetToken(response.AccessToken);
+            main.TokenStorageService.SetSession(response);
             await main.ShowProjectsAsync();
         });
     }
@@ -66,8 +74,15 @@ public partial class LoginPageViewModel(MainViewModel main) : ObservableObject
     }
 }
 
-public partial class RegisterPageViewModel(MainViewModel main) : ObservableObject
+public partial class RegisterPageViewModel : ObservableObject
 {
+    private readonly MainViewModel main;
+
+    public RegisterPageViewModel(MainViewModel main)
+    {
+        this.main = main;
+    }
+
     [ObservableProperty]
     private string username = string.Empty;
 
@@ -102,13 +117,13 @@ public partial class RegisterPageViewModel(MainViewModel main) : ObservableObjec
                 Password = Password
             });
 
-            main.TokenStorageService.SetToken(response.AccessToken);
+            main.TokenStorageService.SetSession(response);
             await main.ShowProjectsAsync();
         });
     }
 
     [RelayCommand]
-    private void OpenLogin() => main.ShowLogin();
+    private void OpenLogin() => main.OpenLoginPage();
 
     private async Task RunSafelyAsync(Func<Task> action)
     {

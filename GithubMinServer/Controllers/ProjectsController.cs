@@ -25,10 +25,12 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
             .Include(project => project.Owner)
             .Include(project => project.Branches)
             .Include(project => project.Commits)
-            .OrderByDescending(project => project.UpdatedAt)
             .ToListAsync(cancellationToken);
 
-        return Ok(projects.Select(project => project.ToSummaryResponse()).ToArray());
+        return Ok(projects
+            .OrderByDescending(project => project.UpdatedAt)
+            .Select(project => project.ToSummaryResponse())
+            .ToArray());
     }
 
     [AllowAnonymous]
@@ -41,10 +43,12 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
             .Include(project => project.Owner)
             .Include(project => project.Branches)
             .Include(project => project.Commits)
-            .OrderByDescending(project => project.UpdatedAt)
             .ToListAsync(cancellationToken);
 
-        return Ok(projects.Select(project => project.ToSummaryResponse()).ToArray());
+        return Ok(projects
+            .OrderByDescending(project => project.UpdatedAt)
+            .Select(project => project.ToSummaryResponse())
+            .ToArray());
     }
 
     [AllowAnonymous]
@@ -65,10 +69,12 @@ public class ProjectsController(AppDbContext dbContext) : ControllerBase
             .Include(project => project.Owner)
             .Include(project => project.Branches)
             .Include(project => project.Commits)
-            .OrderByDescending(project => project.UpdatedAt)
             .ToListAsync(cancellationToken);
 
-        return Ok(projects.Select(project => project.ToSummaryResponse()).ToArray());
+        return Ok(projects
+            .OrderByDescending(project => project.UpdatedAt)
+            .Select(project => project.ToSummaryResponse())
+            .ToArray());
     }
 
     [Authorize]
