@@ -43,8 +43,8 @@ public partial class ProjectsPageViewModel : ObservableObject
     public string SelectedProjectCommitCount => SelectedProjectPage is null ? "-" : SelectedProjectPage.CommitCount.ToString();
     public string SelectedProjectActiveBranch => SelectedProjectPage?.ActiveBranchName ?? "-";
     public bool CanEditSelectedProject =>
-        SelectedProjectPage is not null &&
-        string.Equals(SelectedProjectPage.OwnerUsername, main.TokenStorageService.Username, StringComparison.OrdinalIgnoreCase);
+        SelectedProjectPage?.Project is not null &&
+        main.TokenStorageService.IsCurrentUser(SelectedProjectPage.Project.OwnerId, SelectedProjectPage.Project.OwnerUsername);
 
     partial void OnSelectedProjectChanged(ProjectItemViewModel? value) => NotifySelectionChanged();
 
@@ -111,12 +111,17 @@ public partial class ProjectsPageViewModel : ObservableObject
     [RelayCommand]
     private void OpenCreateProjectDialog() => main.ShowDialog(new CreateProjectDialogViewModel(main, this));
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditSelectedProject))]
     private void OpenEditProjectDialog()
     {
         if (SelectedProjectPage is null)
         {
             StatusMessage = "Сначала выберите репозиторий.";
+            return;
+        }
+
+        if (!EnsureCanEditSelectedProject())
+        {
             return;
         }
 
@@ -135,12 +140,17 @@ public partial class ProjectsPageViewModel : ObservableObject
         await main.ShowProjectDetailsAsync(SelectedProject);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditSelectedProject))]
     private void AttachDirectoryToSelectedProject()
     {
         if (SelectedProject is null)
         {
             StatusMessage = "Сначала выберите репозиторий.";
+            return;
+        }
+
+        if (!EnsureCanEditSelectedProject())
+        {
             return;
         }
 
@@ -231,6 +241,19 @@ public partial class ProjectsPageViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedProjectCommitCount));
         OnPropertyChanged(nameof(SelectedProjectActiveBranch));
         OnPropertyChanged(nameof(CanEditSelectedProject));
+        OpenEditProjectDialogCommand.NotifyCanExecuteChanged();
+        AttachDirectoryToSelectedProjectCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool EnsureCanEditSelectedProject()
+    {
+        if (CanEditSelectedProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
     }
 
     private void SelectedProjectPageOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => NotifySelectionChanged();

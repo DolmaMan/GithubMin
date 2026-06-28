@@ -28,6 +28,7 @@ public class TokenStorageService
     }
 
     public string? AccessToken => _session.AccessToken;
+    public Guid? UserId => _session.UserId;
     public string? Username => _session.Username;
     public string? Email => _session.Email;
     public DateTimeOffset? ExpiresAt => _session.ExpiresAt;
@@ -44,12 +45,24 @@ public class TokenStorageService
         _session = new SavedSession
         {
             AccessToken = response.AccessToken,
+            UserId = response.User.Id,
             Username = response.User.Username,
             Email = response.User.Email,
             ExpiresAt = response.ExpiresAt
         };
 
         PersistSession();
+    }
+
+    public bool IsCurrentUser(Guid userId, string username)
+    {
+        if (_session.UserId.HasValue)
+        {
+            return _session.UserId.Value == userId;
+        }
+
+        return !string.IsNullOrWhiteSpace(username) &&
+            string.Equals(username, _session.Username, StringComparison.OrdinalIgnoreCase);
     }
 
     public void ClearAuthentication(bool preserveLastAccount = true)
@@ -134,6 +147,7 @@ public class TokenStorageService
     private sealed class SavedSession
     {
         public string? AccessToken { get; set; }
+        public Guid? UserId { get; set; }
         public string? Username { get; set; }
         public string? Email { get; set; }
         public DateTimeOffset? ExpiresAt { get; set; }

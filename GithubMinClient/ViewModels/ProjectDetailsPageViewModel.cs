@@ -58,8 +58,7 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     public int BranchCount => Branches.Count;
     public int CommitCount => Commits.Count;
     public bool CanEditProject =>
-        Project is not null &&
-        string.Equals(Project.OwnerUsername, main.TokenStorageService.Username, StringComparison.OrdinalIgnoreCase);
+        Project is not null && main.TokenStorageService.IsCurrentUser(Project.OwnerId, Project.OwnerUsername);
 
     partial void OnProjectChanged(ProjectDetailsResponse? value)
     {
@@ -67,6 +66,7 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         OnPropertyChanged(nameof(OwnerUsername));
         OnPropertyChanged(nameof(VisibilityText));
         OnPropertyChanged(nameof(CanEditProject));
+        NotifyEditCommandStatesChanged();
     }
 
     public async Task RefreshAsync()
@@ -100,24 +100,69 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     [RelayCommand]
     private Task ReloadAsync() => RefreshAsync();
 
-    [RelayCommand]
-    private void OpenDirectoryDialog() => main.ShowDialog(new ProjectDirectoryDialogViewModel(main, this));
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
+    private void OpenDirectoryDialog()
+    {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
 
-    [RelayCommand]
-    private void OpenBranchDialog() => main.ShowDialog(new BranchManagementDialogViewModel(main, this));
+        main.ShowDialog(new ProjectDirectoryDialogViewModel(main, this));
+    }
 
-    [RelayCommand]
-    private void OpenCommitDialog() => main.ShowDialog(new CreateCommitDialogViewModel(main, this));
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
+    private void OpenBranchDialog()
+    {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
 
-    [RelayCommand]
-    private void OpenMergeDialog() => main.ShowDialog(new MergeDialogViewModel(main, this));
+        main.ShowDialog(new BranchManagementDialogViewModel(main, this));
+    }
 
-    [RelayCommand]
-    private void OpenEditProjectDialog() => main.ShowDialog(new EditProjectDialogViewModel(main, null, this));
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
+    private void OpenCommitDialog()
+    {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
 
-    [RelayCommand]
+        main.ShowDialog(new CreateCommitDialogViewModel(main, this));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
+    private void OpenMergeDialog()
+    {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
+
+        main.ShowDialog(new MergeDialogViewModel(main, this));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
+    private void OpenEditProjectDialog()
+    {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
+
+        main.ShowDialog(new EditProjectDialogViewModel(main, null, this));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private void ChangeDirectory()
     {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
+
         var directory = main.FileDialogService.SelectFolder("Выберите рабочую директорию проекта");
         if (string.IsNullOrWhiteSpace(directory))
         {
@@ -129,11 +174,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         StatusMessage = "Рабочая директория обновлена.";
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task CreateCommitAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(CommitMessage))
             {
                 StatusMessage = "Введите сообщение коммита.";
@@ -161,11 +211,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task CreateBranchAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(NewBranchName))
             {
                 StatusMessage = "Введите имя ветки.";
@@ -201,11 +256,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task SwitchBranchAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (SelectedBranch is null)
             {
                 StatusMessage = "Выберите ветку.";
@@ -263,11 +323,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task RestoreCommitAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (SelectedCommit is null)
             {
                 StatusMessage = "Выберите снапшот.";
@@ -299,11 +364,16 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task MergeAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (SelectedSourceBranch is null || SelectedTargetBranch is null)
             {
                 StatusMessage = "Выберите исходную и целевую ветки.";
@@ -394,6 +464,32 @@ public partial class ProjectDetailsPageViewModel(MainViewModel main, Guid projec
     private BranchResponse? GetActiveBranch() => Branches.FirstOrDefault(branch => branch.IsActive);
 
     public static Guid? GetRestoreCommitId(BranchResponse branch) => branch.HeadCommitId ?? branch.CreatedFromCommitId;
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
+    }
+
+    private void NotifyEditCommandStatesChanged()
+    {
+        OpenDirectoryDialogCommand.NotifyCanExecuteChanged();
+        OpenBranchDialogCommand.NotifyCanExecuteChanged();
+        OpenCommitDialogCommand.NotifyCanExecuteChanged();
+        OpenMergeDialogCommand.NotifyCanExecuteChanged();
+        OpenEditProjectDialogCommand.NotifyCanExecuteChanged();
+        ChangeDirectoryCommand.NotifyCanExecuteChanged();
+        CreateCommitCommand.NotifyCanExecuteChanged();
+        CreateBranchCommand.NotifyCanExecuteChanged();
+        SwitchBranchCommand.NotifyCanExecuteChanged();
+        RestoreCommitCommand.NotifyCanExecuteChanged();
+        MergeCommand.NotifyCanExecuteChanged();
+    }
 
     private async Task RunSafelyAsync(Func<Task> action)
     {

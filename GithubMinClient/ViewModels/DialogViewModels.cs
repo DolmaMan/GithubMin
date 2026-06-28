@@ -159,6 +159,8 @@ public partial class EditProjectDialogViewModel : DialogViewModelBase
         Visibility = VisibilityOptions.First(option => option.Value == (projectPage.Project?.Visibility ?? ProjectVisibility.Private));
     }
 
+    public bool CanEditProject => projectPage.CanEditProject;
+
     public IReadOnlyList<ProjectVisibilityOption> VisibilityOptions { get; }
 
     [ObservableProperty]
@@ -170,11 +172,16 @@ public partial class EditProjectDialogViewModel : DialogViewModelBase
     [ObservableProperty]
     private ProjectVisibilityOption visibility;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task SaveAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(Name))
             {
                 StatusMessage = "Введите название проекта.";
@@ -215,6 +222,17 @@ public partial class EditProjectDialogViewModel : DialogViewModelBase
 
             Main.CloseDialog();
         });
+    }
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
     }
 }
 
@@ -333,12 +351,19 @@ public partial class ProjectDirectoryDialogViewModel : DialogViewModelBase
         DirectoryPath = page.WorkingDirectory;
     }
 
+    public bool CanEditProject => page.CanEditProject;
+
     [ObservableProperty]
     private string directoryPath = string.Empty;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private void ChooseDirectory()
     {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
+
         var directory = Main.FileDialogService.SelectFolder("Выберите рабочую директорию проекта");
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -346,11 +371,16 @@ public partial class ProjectDirectoryDialogViewModel : DialogViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task SaveAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(DirectoryPath) || !Directory.Exists(DirectoryPath))
             {
                 StatusMessage = "Выберите существующую директорию.";
@@ -363,6 +393,17 @@ public partial class ProjectDirectoryDialogViewModel : DialogViewModelBase
             await page.RefreshAsync();
             Main.CloseDialog();
         });
+    }
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
     }
 }
 
@@ -388,6 +429,7 @@ public partial class BranchManagementDialogViewModel : DialogViewModelBase
 
     public ObservableCollection<BranchResponse> Branches { get; } = [];
     public ObservableCollection<CommitSummaryResponse> Commits { get; } = [];
+    public bool CanEditProject => page.CanEditProject;
 
     [ObservableProperty]
     private BranchResponse? selectedBranch;
@@ -398,11 +440,16 @@ public partial class BranchManagementDialogViewModel : DialogViewModelBase
     [ObservableProperty]
     private CommitSummaryResponse? selectedStartCommit;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task SwitchAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (SelectedBranch is null)
             {
                 StatusMessage = "Выберите ветку.";
@@ -439,11 +486,16 @@ public partial class BranchManagementDialogViewModel : DialogViewModelBase
         });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task CreateAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(NewBranchName))
             {
                 StatusMessage = "Введите имя ветки.";
@@ -479,6 +531,17 @@ public partial class BranchManagementDialogViewModel : DialogViewModelBase
             Main.CloseDialog();
         });
     }
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
+    }
 }
 
 public partial class CreateCommitDialogViewModel : DialogViewModelBase
@@ -498,6 +561,7 @@ public partial class CreateCommitDialogViewModel : DialogViewModelBase
     }
 
     public ObservableCollection<BranchResponse> Branches { get; } = [];
+    public bool CanEditProject => page.CanEditProject;
 
     [ObservableProperty]
     private BranchResponse? selectedBranch;
@@ -508,9 +572,14 @@ public partial class CreateCommitDialogViewModel : DialogViewModelBase
     [ObservableProperty]
     private string commitMessage = string.Empty;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private void ChooseDirectory()
     {
+        if (!EnsureCanEditProject())
+        {
+            return;
+        }
+
         var directory = Main.FileDialogService.SelectFolder("Выберите рабочую директорию проекта");
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -518,11 +587,16 @@ public partial class CreateCommitDialogViewModel : DialogViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task CreateAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(CommitMessage))
             {
                 StatusMessage = "Введите сообщение коммита.";
@@ -543,6 +617,17 @@ public partial class CreateCommitDialogViewModel : DialogViewModelBase
             Main.CloseDialog();
         });
     }
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
+    }
 }
 
 public partial class MergeDialogViewModel : DialogViewModelBase
@@ -562,6 +647,7 @@ public partial class MergeDialogViewModel : DialogViewModelBase
     }
 
     public ObservableCollection<BranchResponse> Branches { get; } = [];
+    public bool CanEditProject => page.CanEditProject;
 
     [ObservableProperty]
     private BranchResponse? selectedSourceBranch;
@@ -572,11 +658,16 @@ public partial class MergeDialogViewModel : DialogViewModelBase
     [ObservableProperty]
     private string mergeMessage = string.Empty;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditProject))]
     private async Task MergeAsync()
     {
         await RunSafelyAsync(async () =>
         {
+            if (!EnsureCanEditProject())
+            {
+                return;
+            }
+
             if (SelectedSourceBranch is null || SelectedTargetBranch is null)
             {
                 StatusMessage = "Выберите исходную и целевую ветки.";
@@ -618,5 +709,16 @@ public partial class MergeDialogViewModel : DialogViewModelBase
             page.StatusMessage = response.Message;
             Main.CloseDialog();
         });
+    }
+
+    private bool EnsureCanEditProject()
+    {
+        if (CanEditProject)
+        {
+            return true;
+        }
+
+        StatusMessage = "Этот репозиторий доступен только для просмотра. Изменять его может только владелец.";
+        return false;
     }
 }

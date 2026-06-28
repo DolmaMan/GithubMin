@@ -461,9 +461,9 @@
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.1*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="1.7*" />
+                        <ColumnDefinition Width="0.65*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="2.15*" />
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource CardBorder}">
@@ -474,26 +474,26 @@
                                     <TextBlock Style="{StaticResource MetricCaption}" Text="Название" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectName}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Владелец" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Владелец" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectOwner}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Видимость" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Видимость" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectVisibility}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Активная ветка" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Активная ветка" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectActiveBranch}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Ветки" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Ветки" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectBranchCount}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Коммиты" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Коммиты" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MetricValue}" Text="{Binding SelectedProjectCommitCount}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Локальная папка" Margin="0,14,0,4" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Локальная папка" Margin="0,8,0,4" />
                                     <TextBlock Style="{StaticResource MutedText}" Text="{Binding SelectedProjectLocalStatus}" />
 
-                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Описание" Margin="0,14,0,4" />
-                                    <TextBlock Style="{StaticResource MutedText}" Text="{Binding SelectedProjectDescription}" />
+                                    <TextBlock Style="{StaticResource MetricCaption}" Text="Описание" Margin="0,8,0,4" />
+                                    <TextBlock Style="{StaticResource MutedText}" Text="{Binding SelectedProjectDescription}" MaxHeight="64" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                             </ScrollViewer>
                         </DockPanel>
@@ -501,8 +501,8 @@
 
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="200" />
-                            <RowDefinition Height="16" />
+                            <RowDefinition Height="280" />
+                            <RowDefinition Height="12" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
@@ -521,7 +521,7 @@
                             <DockPanel>
                                 <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
                                     <Button Content="Скачать снапшот" Command="{Binding SelectedProjectPage.DownloadCommitCommand}" />
-                                    <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.RestoreCommitCommand}" />
+                                    <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.RestoreCommitCommand}" IsEnabled="{Binding SelectedProjectPage.CanEditProject, TargetNullValue=False}" />
                                 </WrapPanel>
                                 <DataGrid ItemsSource="{Binding SelectedProjectPage.Commits}" SelectedItem="{Binding SelectedProjectPage.SelectedCommit}" AutoGenerateColumns="False" IsReadOnly="True">
                                     <DataGrid.Columns>
@@ -545,10 +545,10 @@
                         </Grid.RowDefinitions>
 
                         <WrapPanel Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Button Content="Папка" Command="{Binding SelectedProjectPage.OpenDirectoryDialogCommand}" Width="108" Margin="0,0,8,0" />
-                            <Button Content="Ветка" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenBranchDialogCommand}" Width="108" Margin="0,0,8,0" />
-                            <Button Content="Коммит" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenCommitDialogCommand}" Width="108" Margin="0,0,8,0" />
-                            <Button Content="Merge" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenMergeDialogCommand}" Width="108" Margin="0,0,8,0" />
+                            <Button Content="Папка" Command="{Binding SelectedProjectPage.OpenDirectoryDialogCommand}" Width="108" Margin="0,0,8,0" IsEnabled="{Binding SelectedProjectPage.CanEditProject, TargetNullValue=False}" />
+                            <Button Content="Ветка" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenBranchDialogCommand}" Width="108" Margin="0,0,8,0" IsEnabled="{Binding SelectedProjectPage.CanEditProject, TargetNullValue=False}" />
+                            <Button Content="Коммит" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenCommitDialogCommand}" Width="108" Margin="0,0,8,0" IsEnabled="{Binding SelectedProjectPage.CanEditProject, TargetNullValue=False}" />
+                            <Button Content="Merge" Style="{StaticResource GhostButton}" Command="{Binding SelectedProjectPage.OpenMergeDialogCommand}" Width="108" Margin="0,0,8,0" IsEnabled="{Binding SelectedProjectPage.CanEditProject, TargetNullValue=False}" />
                             <Button Content="Редактировать" Style="{StaticResource GhostButton}" Command="{Binding OpenEditProjectDialogCommand}" Width="132" Margin="0" IsEnabled="{Binding CanEditSelectedProject}" />
                         </WrapPanel>
 
@@ -574,10 +574,10 @@
                             <TextBlock Text="{Binding Title}" Style="{StaticResource PageHeading}" FontSize="28" />
                         </StackPanel>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Button Content="Папка" Style="{StaticResource HeaderButton}" Command="{Binding OpenDirectoryDialogCommand}" />
-                            <Button Content="Ветки" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenBranchDialogCommand}" />
-                            <Button Content="Коммит" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenCommitDialogCommand}" />
-                            <Button Content="Merge" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenMergeDialogCommand}" />
+                            <Button Content="Папка" Style="{StaticResource HeaderButton}" Command="{Binding OpenDirectoryDialogCommand}" IsEnabled="{Binding CanEditProject}" />
+                            <Button Content="Ветки" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenBranchDialogCommand}" IsEnabled="{Binding CanEditProject}" />
+                            <Button Content="Коммит" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenCommitDialogCommand}" IsEnabled="{Binding CanEditProject}" />
+                            <Button Content="Merge" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenMergeDialogCommand}" IsEnabled="{Binding CanEditProject}" />
                             <Button Content="Редактировать" Style="{StaticResource HeaderGhostButton}" Command="{Binding OpenEditProjectDialogCommand}" IsEnabled="{Binding CanEditProject}" />
                             <Button Content="Обновить" Style="{StaticResource HeaderGhostButton}" Command="{Binding ReloadCommand}" />
                             <Button Content="Назад" Style="{StaticResource HeaderGhostButton}" Command="{Binding BackCommand}" Margin="0" />
@@ -587,30 +587,30 @@
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="1.7*" />
+                        <ColumnDefinition Width="0.55*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="2.2*" />
                     </Grid.ColumnDefinitions>
 
-                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
                         <StackPanel>
-                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,10" Padding="14">
                                 <StackPanel>
                                     <TextBlock Text="Обзор проекта" Style="{StaticResource SectionTitle}" />
-                                    <UniformGrid Columns="2" Margin="0,4,0,0">
-                                        <StackPanel Margin="0,0,16,16">
+                                    <UniformGrid Columns="2" Margin="0,2,0,0">
+                                        <StackPanel Margin="0,0,10,8">
                                             <TextBlock Style="{StaticResource MetricCaption}" Text="Владелец" />
                                             <TextBlock Style="{StaticResource MetricValue}" Text="{Binding OwnerUsername}" />
                                         </StackPanel>
-                                        <StackPanel Margin="0,0,0,16">
+                                        <StackPanel Margin="0,0,0,8">
                                             <TextBlock Style="{StaticResource MetricCaption}" Text="Видимость" />
                                             <TextBlock Style="{StaticResource MetricValue}" Text="{Binding VisibilityText}" />
                                         </StackPanel>
-                                        <StackPanel Margin="0,0,16,16">
+                                        <StackPanel Margin="0,0,10,8">
                                             <TextBlock Style="{StaticResource MetricCaption}" Text="Активная ветка" />
                                             <TextBlock Style="{StaticResource MetricValue}" Text="{Binding ActiveBranchName}" />
                                         </StackPanel>
-                                        <StackPanel Margin="0,0,0,16">
+                                        <StackPanel Margin="0,0,0,8">
                                             <TextBlock Style="{StaticResource MetricCaption}" Text="Коммитов / веток" />
                                             <TextBlock Style="{StaticResource MetricValue}" Text="{Binding CommitCount, StringFormat={}{0} коммитов}" />
                                             <TextBlock Style="{StaticResource MutedText}" Text="{Binding BranchCount, StringFormat={}{0} веток}" />
@@ -621,20 +621,13 @@
                                     <TextBlock Style="{StaticResource MutedText}" Text="{Binding WorkingDirectory}" />
                                 </StackPanel>
                             </Border>
-
-                            <Border Style="{StaticResource CardBorder}">
-                                <StackPanel>
-                                    <TextBlock Text="Подсказка" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Style="{StaticResource MutedText}" Text="Все операции по рабочей папке, веткам, коммитам и merge открываются из кнопок в заголовке. Основная рабочая область отведена под историю и обзор проекта." />
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                     </ScrollViewer>
 
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="240" />
-                            <RowDefinition Height="16" />
+                            <RowDefinition Height="320" />
+                            <RowDefinition Height="12" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
@@ -653,7 +646,7 @@
                             <DockPanel>
                                 <WrapPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
                                     <Button Content="Скачать снапшот" Command="{Binding DownloadCommitCommand}" />
-                                    <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding RestoreCommitCommand}" />
+                                    <Button Content="Восстановить снапшот" Style="{StaticResource GhostButton}" Command="{Binding RestoreCommitCommand}" IsEnabled="{Binding CanEditProject}" />
                                 </WrapPanel>
                                 <DataGrid ItemsSource="{Binding Commits}" SelectedItem="{Binding SelectedCommit}" AutoGenerateColumns="False" IsReadOnly="True">
                                     <DataGrid.Columns>
